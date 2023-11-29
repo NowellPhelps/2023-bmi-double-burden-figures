@@ -56,6 +56,7 @@ circular_bar_function_all <- function(subset, my_sex, my_year, showLegend = FALS
   xintv <- 20
   
   
+  
   max_measure <- 100.1
   xlims       <- c(0, max_measure)
   xTicks      <- seq(0,max_measure,xintv)
@@ -134,10 +135,10 @@ circular_bar_function <- function(subset, my_sex, my_year, type, showLegend = FA
     plot_data <- plot_data %>% filter(age_group == "ageStd")
   }
   
-  if(type == "obesity"){
-    text_size <- 3.2
-  } else{
-    text_size <- 3.6
+  if(appendix){
+     text_size <- 3.6
+  }else{
+     text_size <- 3.2
   }
   
   ### DERIVE COUNTRY ORDER
@@ -262,8 +263,9 @@ circular_bar_function <- function(subset, my_sex, my_year, type, showLegend = FA
           axis.title = element_blank(),
           text = element_text(family = "sans"),
           plot.margin = margin(t = 0, r = 0, b = 0, l = 0, unit = "pt")) +
+     theme(plot.title = element_text(vjust = 10)) +
     xlim(c(-1.5, 202.5)) + ggtitle(label=legInd) +  theme(plot.title = element_text(hjust = 0.5,face='bold')) +
-    geom_text(data = horizontal_lines %>% subset(mean!=0), aes(x = -1.5, y = mean, label = label, hjust = 0.5), size = 3.5) +
+    geom_text(data = horizontal_lines %>% subset(mean!=0), aes(x = -1.5, y = mean, label = label, hjust = 0.5), size = text_size) +
     geom_segment(data = horizontal_lines %>% subset(mean!=0 & mean < max_measure), aes(x = 0.5, xend = 200, y = mean, yend = mean),
                  colour = grey(0.85), linewidth = 0.05) 
   
