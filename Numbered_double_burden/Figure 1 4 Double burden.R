@@ -240,7 +240,7 @@ if (appendix){
                      blank,
                      nrow = 1, widths = c(.5, 10, .12, 10, .5)),
          ncol = 1,
-         heights = c(1,1,10,.6,1.5,1,7)
+         heights = c(1,1,10,1.1,1,1,7)
       ))
    
    grid.arrange(
@@ -265,7 +265,7 @@ if (appendix){
                      blank,
                      nrow = 1, widths = c(.5, 10, .12, 10, .5)),
          ncol = 1,
-         heights = c(1,1,10,.6,1.5,1,7)
+         heights = c(1,1,10,1.1,1,1,7)
       ))
    
    dev.off()

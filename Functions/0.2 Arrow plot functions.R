@@ -127,8 +127,8 @@ timechange_arrow <- function(subset, subset_order = NULL, var, my_sex, my_age_gr
     xlim(xlims) +
     xlab(xaxislab) +
     theme_minimal() +
-    theme(axis.text.x = element_text(size = 12),
-          axis.title.x = element_text(size = 14),
+    theme(axis.text.x = element_text(size = 10),
+          axis.title.x = element_text(size = 10),
           axis.text.y = element_blank(),
           axis.title.y = element_blank(),
           axis.ticks.x = element_line(linewidth =0.5,colour = "grey"),
@@ -139,14 +139,14 @@ timechange_arrow <- function(subset, subset_order = NULL, var, my_sex, my_age_gr
     scale_y_continuous(limits = c(0,201),expand = c(0,0)) +
     
     geom_text(data = text_data %>% filter(pos%%2 == 1), aes(y = pos, x = x, label = Country),
-              size =  3.2,
+              size =  3,
               colour = (text_data %>% filter(pos%%2 == 1))$colour,
               angle = 0,
               vjust = 0.5,
               hjust = 1)  +
     
     geom_text(data = text_data %>% filter(pos%%2 == 0), aes(y = pos, x = x, label = Country),
-              size =  3.2,
+              size =  3,
               colour = (text_data %>% filter(pos%%2 == 0))$colour,
               angle = 0,
               vjust = 0.5,

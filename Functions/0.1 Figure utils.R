@@ -27,7 +27,7 @@ get_var_longname <- function(var){
   longname <- switch(var,
                      "mean_bmi" = "mean BMI",
                      "prev_double_burden" = "prevalence of double burden",
-                     "prev_bmi_30_proportion_double_burden" = "proportion of combined burden\n composed of obesity",
+                     "prev_bmi_30_proportion_double_burden" = "Proportion of combined burden composed of obesity",
                      "prev_bmi_30"   = "prevalence of obesity",
                      "prev_bmi_l185" = "prevalence of underweight",
                      "prev_bmi_35"   = "prevalence of severe obesity",
@@ -40,7 +40,7 @@ get_var_longname <- function(var){
                      "prev_bmi_30_35_proportion_obesity" = "Proportion of total obesity composed of class one obesity",
                      "prev_bmi_35_40_proportion_obesity" = "Proportion of total obesity composed of class two obesity",
                      "prev_bmi_40_proportion_obesity" =   "Proportion of total obesity composed of class three obesity",
-                     "prev_bmi_2sd_proportion_double_burden" = "proportion of combined burden\n composed of obesity",)
+                     "prev_bmi_2sd_proportion_double_burden" = "Proportion of combined burden composed of obesity",)
   
   return(longname)
 }
