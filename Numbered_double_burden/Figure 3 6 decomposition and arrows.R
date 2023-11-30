@@ -110,9 +110,31 @@ for(my_age_group in age_groups){
      
 }
 
+
 grid.arrange(
    
    textGrob("A", x = unit(0.02, "npc"),gp = gpar(col = "black", fontsize = 25)),
+   
+   arrangeGrob(
+      arrangeGrob(
+         textGrob(plot.title.f, x = unit(0.1, "npc"),gp = gpar(col = "black", fontsize = 18)),
+         ps[[paste("female", "decomposition", "rotating", my_age_group)]],
+         ncol = 1, heights = c(1,20)),
+      
+      arrangeGrob(
+         textGrob(plot.title.m, x = unit(0.1, "npc"),gp = gpar(col = "black", fontsize = 18)),
+         ps[[paste("male", "decomposition", "rotating", my_age_group)]],
+         ncol = 1, heights = c(1,20)),
+      nrow = 1,
+      widths = c(1,1)),
+   
+   ncol = 1, 
+   heights = c(1,20)
+)
+
+grid.arrange(
+   
+   textGrob("B", x = unit(0.02, "npc"),gp = gpar(col = "black", fontsize = 25)),
    
    arrangeGrob(
       arrangeGrob(
@@ -131,26 +153,6 @@ grid.arrange(
    heights = c(1,20)
 )
 
-grid.arrange(
-   
-   textGrob("B", x = unit(0.02, "npc"),gp = gpar(col = "black", fontsize = 25)),
-   
-   arrangeGrob(
-      arrangeGrob(
-         textGrob(plot.title.f, x = unit(0.1, "npc"),gp = gpar(col = "black", fontsize = 18)),
-         ps[[paste("female", "decomposition", "rotating", my_age_group)]],
-         ncol = 1, heights = c(1,20)),
-      
-      arrangeGrob(
-         textGrob(plot.title.m, x = unit(0.1, "npc"),gp = gpar(col = "black", fontsize = 18)),
-         ps[[paste("male", "decomposition", "rotating", my_age_group)]],
-         ncol = 1, heights = c(1,20)),
-      nrow = 1,
-      widths = c(1,1)),
-   
-   ncol = 1, 
-   heights = c(1,20)
-)
 
 dev.off()
 

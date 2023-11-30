@@ -14,7 +14,9 @@ if(age_type == "adult"){
 
 
 ##################### READ DATA FOR MAPS #####################################
-data_level         <- read_data_level(variables = c(proportion_var), sexes, age_type = "ageStd", region_level = "Country") %>% filter(year == plot.start.year | year == plot.end.year) %>% left_join(., studies_data, by = c("sex", "iso"))
+data_level         <- read_data_level(variables = c(proportion_var), sexes, age_type = "ageStd", region_level = "Country") %>% 
+   filter(year == plot.start.year | year == plot.end.year) %>% 
+   left_join(., studies_data, by = c("sex", "iso"))
 
 
 ########################  GENERATE PLOTS #######################################

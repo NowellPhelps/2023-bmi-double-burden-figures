@@ -251,11 +251,18 @@ maps_level_plots <- function(data, variable, my_sex, my_age_group = "ageStd", pl
   density <- ggplot(data, aes(x = mean, y = 1, fill = after_stat(x))) +
     ggridges::geom_density_ridges_gradient(colour="black", size=0.1) +
     my_fill + theme_minimal() +
-    scale_x_continuous(expand = c(0, 0), breaks = breaks, limits = c(plot.min, plot.max)) +
     scale_y_continuous(expand = c(0, 0)) +
     theme(legend.position="none", legend.title=element_blank(),
           panel.grid = element_blank(),
           axis.text.y = element_blank(), axis.title = element_blank(), axis.ticks.x = element_line())
+  
+  if(variable == "prev_bmi_30_proportion_double_burden" | variable == "prev_bmi_2sd_proportion_double_burden"){
+     density <- density +
+        scale_x_continuous(expand = c(0, 0), breaks = breaks, limits = c(plot.min, plot.max), labels = scales::percent_format(scale = 1)) +
+        theme(axis.text.x = element_text(hjust = 0.7, angle = 0))
+  } else{
+     density <- density + scale_x_continuous(expand = c(0, 0), breaks = breaks, limits = c(plot.min, plot.max))
+  }
   
   # Arrange and plot
   if((appendix & (figNum %in% c(5,6,7,8,14,15,16))) | (!(appendix) & figNum %in% c(2,6))){
@@ -347,7 +354,6 @@ maps_timeChg_plots <- function(data, variable, my_sex, my_age_group = "ageStd", 
   
   # Filter data to sex - needed here rather than earlier so bounds consistent across sexes
   data <- data %>% filter(sex == my_sex) %>% filter(age_group == my_age_group)
-  
   
   # Generate main map, caribbean map and inset boxes 
   main_map      <- map_function(data, "mean", legend = TRUE, plot_title = paste(c(rep(" ", 10), plot.title), collapse = ""), leg_fill = my_fill, type = "timechange")
