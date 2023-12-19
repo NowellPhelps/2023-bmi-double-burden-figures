@@ -6,7 +6,7 @@ if(!(appendix)){
    figNum          <- ifelse(age_type == "adult", 3, 6)
    age_groups      <- c("ageStd")
 } else{
-   figNum          <- 12
+   figNums          <- c("13", "14")
    age_groups      <- c("young", "mid", "old")
 }
 
@@ -81,78 +81,145 @@ blank <- grid.rect(gp=gpar(col=NA, fill = NA))
 
 #### 3 PRINT PDF ###############################################################
 
-cairo_pdf(paste0(outdir_folder, ifelse(appendix, "Appendix Figure ", "Figure "), figNum, figsuffix,".pdf"), height = 13, width = 15.5, onefile=T)
-
-
-for(my_age_group in age_groups){
+if (appendix){
    
-   if(age_type == "adult"){
-      if(appendix){
-         
-         age.longname <- switch(my_age_group,
-                                "young" = "20-39 years",
-                                "mid" = "40-64 years",
-                                "old" = "65+ years")
-         
-         plot.title.f <- paste0("Women, ", age.longname)
-         plot.title.m <- paste0("Men, ", age.longname)
-
-      } else{
-         plot.title.f <- "Women"
-         plot.title.m <- "Men"
-      }
+   cairo_pdf(paste0(outdir_folder, ifelse(appendix, "Appendix Figure ", "Figure "), figNums[1], figsuffix,".pdf"), height = 13, width = 17, onefile=T)
+   
+   for(my_age_group in age_groups){
       
+      age.longname <- switch(my_age_group,
+                             "young" = "20-39 years",
+                             "mid" = "40-64 years",
+                             "old" = "65+ years")
+      
+      plot.title.f <- paste0("Women, ", age.longname)
+      plot.title.m <- paste0("Men, ", age.longname)
+         
+      grid.arrange(
+         
+         textGrob("", x = unit(0.02, "npc"),gp = gpar(col = "black", fontsize = 25)),
+         
+         arrangeGrob(
+            arrangeGrob(
+               textGrob(plot.title.f, x = unit(0.1, "npc"),hjust = 0,gp = gpar(col = "black", fontsize = 18)),
+               ps[[paste("female", "decomposition", "rotating", my_age_group)]],
+               ncol = 1, heights = c(1,20)),
+            
+            arrangeGrob(
+               textGrob(plot.title.m, x = unit(0.1, "npc"),hjust = 0,gp = gpar(col = "black", fontsize = 18)),
+               ps[[paste("male", "decomposition", "rotating", my_age_group)]],
+               ncol = 1, heights = c(1,20)),
+            nrow = 1,
+            widths = c(1,1)),
+         
+         ncol = 1, 
+         heights = c(.11,20)
+      )
+   
+   }
+   
+   dev.off()
+   
+   
+   cairo_pdf(paste0(outdir_folder, ifelse(appendix, "Appendix Figure ", "Figure "), figNums[2], figsuffix,".pdf"), height = 13, width = 15.5, onefile=T)
+   
+   
+   
+   for(my_age_group in age_groups){
+      
+      age.longname <- switch(my_age_group,
+                             "young" = "20-39 years",
+                             "mid" = "40-64 years",
+                             "old" = "65+ years")
+      
+      plot.title.f <- paste0("Women, ", age.longname)
+      plot.title.m <- paste0("Men, ", age.longname)
+      
+      
+      grid.arrange(
+         
+         textGrob("", x = unit(0.02, "npc"),gp = gpar(col = "black", fontsize = 25)),
+         
+         arrangeGrob(
+            arrangeGrob(
+               textGrob(plot.title.f, x = unit(0.1, "npc"),hjust = 0,gp = gpar(col = "black", fontsize = 18)),
+               ps[[paste("female", "composition double burden", "none", my_age_group)]],
+               ncol = 1, heights = c(1,20)),
+            
+            arrangeGrob(
+               textGrob(plot.title.m, x = unit(0.1, "npc"),hjust = 0, gp = gpar(col = "black", fontsize = 18)),
+               ps[[paste("male", "composition double burden", "none", my_age_group)]],
+               ncol = 1, heights = c(1,20)),
+            nrow = 1,
+            widths = c(1,1)),
+         
+         ncol = 1, 
+         heights = c(0.1,20)
+      )
+   }
+   
+   dev.off()
+   
+   
+} else{
+   
+   cairo_pdf(paste0(outdir_folder, ifelse(appendix, "Appendix Figure ", "Figure "), figNum, figsuffix,".pdf"), height = 13, width = 15.5, onefile=T)
+
+   if(age_type == "adult"){
+      
+      plot.title.f <- "Women"
+      plot.title.m <- "Men"
       
    } else if(age_type == "ado"){
       plot.title.f <- "Girls"
       plot.title.m <- "Boys"
    }
-     
+   
+   grid.arrange(
+      
+      textGrob("A", x = unit(0.02, "npc"),gp = gpar(col = "black", fontsize = 25)),
+      
+      arrangeGrob(
+         arrangeGrob(
+            textGrob(plot.title.f, x = unit(0.1, "npc"),gp = gpar(col = "black", fontsize = 18)),
+            ps[[paste("female", "decomposition", "rotating", my_age_group)]],
+            ncol = 1, heights = c(1,20)),
+         
+         arrangeGrob(
+            textGrob(plot.title.m, x = unit(0.1, "npc"),gp = gpar(col = "black", fontsize = 18)),
+            ps[[paste("male", "decomposition", "rotating", my_age_group)]],
+            ncol = 1, heights = c(1,20)),
+         nrow = 1,
+         widths = c(1,1)),
+      
+      ncol = 1, 
+      heights = c(1,20)
+   )
+   
+   grid.arrange(
+      
+      textGrob("B", x = unit(0.02, "npc"),gp = gpar(col = "black", fontsize = 25)),
+      
+      arrangeGrob(
+         arrangeGrob(
+            textGrob(plot.title.f, x = unit(0.1, "npc"),gp = gpar(col = "black", fontsize = 18)),
+            ps[[paste("female", "composition double burden", "none", my_age_group)]],
+            ncol = 1, heights = c(1,20)),
+         
+         arrangeGrob(
+            textGrob(plot.title.m, x = unit(0.1, "npc"),gp = gpar(col = "black", fontsize = 18)),
+            ps[[paste("male", "composition double burden", "none", my_age_group)]],
+            ncol = 1, heights = c(1,20)),
+         nrow = 1,
+         widths = c(1,1)),
+      
+      ncol = 1, 
+      heights = c(1,20)
+   )
+   
+   dev.off()
+   
 }
 
 
-grid.arrange(
-   
-   textGrob("A", x = unit(0.02, "npc"),gp = gpar(col = "black", fontsize = 25)),
-   
-   arrangeGrob(
-      arrangeGrob(
-         textGrob(plot.title.f, x = unit(0.1, "npc"),gp = gpar(col = "black", fontsize = 18)),
-         ps[[paste("female", "decomposition", "rotating", my_age_group)]],
-         ncol = 1, heights = c(1,20)),
-      
-      arrangeGrob(
-         textGrob(plot.title.m, x = unit(0.1, "npc"),gp = gpar(col = "black", fontsize = 18)),
-         ps[[paste("male", "decomposition", "rotating", my_age_group)]],
-         ncol = 1, heights = c(1,20)),
-      nrow = 1,
-      widths = c(1,1)),
-   
-   ncol = 1, 
-   heights = c(1,20)
-)
-
-grid.arrange(
-   
-   textGrob("B", x = unit(0.02, "npc"),gp = gpar(col = "black", fontsize = 25)),
-   
-   arrangeGrob(
-      arrangeGrob(
-         textGrob(plot.title.f, x = unit(0.1, "npc"),gp = gpar(col = "black", fontsize = 18)),
-         ps[[paste("female", "composition double burden", "none", my_age_group)]],
-         ncol = 1, heights = c(1,20)),
-      
-      arrangeGrob(
-         textGrob(plot.title.m, x = unit(0.1, "npc"),gp = gpar(col = "black", fontsize = 18)),
-         ps[[paste("male", "composition double burden", "none", my_age_group)]],
-         ncol = 1, heights = c(1,20)),
-      nrow = 1,
-      widths = c(1,1)),
-   
-   ncol = 1, 
-   heights = c(1,20)
-)
-
-
-dev.off()
 

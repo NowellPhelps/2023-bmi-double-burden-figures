@@ -120,7 +120,7 @@ circular_bar_function_all <- function(subset, my_sex, my_year, showLegend = FALS
   }
   return(p)
 }
-
+library(ggtext)
 
 circular_bar_function <- function(subset, my_sex, my_year, type, showLegend = FALSE, order_level = "region", order_by = "prev_bmi_30", composition = "absolute", studyNumbers = F, appendix = F) {
   # composition takes "absolute" or "relative"
@@ -135,11 +135,9 @@ circular_bar_function <- function(subset, my_sex, my_year, type, showLegend = FA
     plot_data <- plot_data %>% filter(age_group == "ageStd")
   }
   
-  if(appendix){
-     text_size <- 3.6
-  }else{
-     text_size <- 3.2
-  }
+  
+  text_size <- 3.2
+  
   
   ### DERIVE COUNTRY ORDER
   
@@ -246,7 +244,8 @@ circular_bar_function <- function(subset, my_sex, my_year, type, showLegend = FA
   text_data$text_pos2  <- max_measure * 1.08
   text_data$low_pos  <- 0
   
-  p <- ggplot(plot_data, aes(x = pos, y = mean)) +
+ 
+   p <- ggplot(plot_data, aes(x = pos, y = mean)) +
     theme_tufte() + coord_polar(clip = "off") +
     geom_segment(data= vlines, aes(x = loc, xend = loc, y = 0, yend = yend), colour=grey(0.95), linewidth=0.05) +
     fill_scale +

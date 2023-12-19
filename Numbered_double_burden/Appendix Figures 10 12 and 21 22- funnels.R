@@ -20,12 +20,12 @@ dir.create(outdir_folder_interactive, showWarnings= F)
 if(age_type == "adult"){
   level_variables   <- c("prev_bmi_30_proportion_double_burden")
   change_variables  <- c("prev_bmi_l185", "prev_bmi_30", "prev_bmi_30_proportion_double_burden", "prev_double_burden")
-  figNums            <- c(10, 13)
+  figNums            <- c(10, 12)
   
 } else{
   level_variables   <- c("prev_bmi_2sd_proportion_double_burden")
   change_variables  <- c("prev_bmi_neg2sd", "prev_bmi_2sd", "prev_bmi_2sd_proportion_double_burden", "prev_double_burden")
-  figNums            <- c(18, 20)
+  figNums            <- c(21, 22)
 }
 
 age_groups   <- c("ageStd")

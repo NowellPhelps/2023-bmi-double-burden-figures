@@ -1,6 +1,6 @@
 ## APPENDIX FIGURE 3 - WHEEL PLOTS ALL
 
-figNum <- 5
+figNum <- 4
 outdir_folder <- paste0(outdir, "Numbered/")
 dir.create(outdir_folder, showWarnings = FALSE)
 

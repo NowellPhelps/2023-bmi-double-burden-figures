@@ -2,7 +2,7 @@ figsuffix                <- ""
 figsuffix                <- ifelse(figsuffix == "", "", paste0(" ", figsuffix))
 outdir_folder            <- paste0(outdir,"Numbered/")
 
-figNum          <- ifelse(age_type == "adult", 6, 15)
+figNum          <- ifelse(age_type == "adult", 7, 19)
   
 dir.create(outdir_folder, showWarnings = F)
 

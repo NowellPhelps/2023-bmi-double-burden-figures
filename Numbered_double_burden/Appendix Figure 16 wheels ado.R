@@ -1,6 +1,6 @@
 ### 2 MASTER #######################
 # Master to create wheels
-figNum        <- 14
+figNum        <- 16
 outdir_folder <- paste0(outdir, "Numbered/")
 dir.create(outdir_folder, showWarnings = FALSE)
 

@@ -45,8 +45,6 @@ get_var_longname <- function(var){
   return(longname)
 }
 
-
-
 read_countrylist <- function(country.list.name.tmp, type){
   countrylist.tmp <- read.csv(paste0(maindir,"Covariates/", country.list.name.tmp))
   
@@ -103,8 +101,6 @@ read_data_level <- function(variables, sexes, age_type, region_level, variable_t
   
   return(data_level)
 }
-
-
 
 
 read_data_timechange <- function(variables, sexes, age_groups, age_type = "ageStd", region_level = "Country", timechange_type = "absolute", variable_type = "prev"){
@@ -178,8 +174,6 @@ read_data_slopes <- function(variables, sexes, age_type = "ageStd", region_level
   
   return(data_slopes)
 }
-
-
 
 
 source(paste0(functionsDir,"0.2 Arrow plot functions.R"))

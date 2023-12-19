@@ -6,7 +6,7 @@ appendix <- T
 figsuffix                <- ""
 figsuffix                <- ifelse(figsuffix == "", "", paste0(" ", figsuffix))
 outdir_folder            <- paste0("")
-figNum <- 21
+figNum <- 25
 
 library(tidyverse)
 library(ggnewscale)

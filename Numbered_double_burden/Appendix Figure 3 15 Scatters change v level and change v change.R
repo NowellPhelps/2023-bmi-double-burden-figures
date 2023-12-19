@@ -2,13 +2,10 @@ figsuffix                <- ""
 figsuffix                <- ifelse(figsuffix == "", "", paste0(" ", figsuffix))
 outdir_folder            <- paste0(outdir,"Numbered/")
 
-if(!(appendix)){
-  figNum          <- ifelse(age_type == "adult", 3, 6)
-  age_groups      <- c("ageStd")
-} else{
-  figNum          <- 10
-  age_groups      <- c("young", "mid", "old")
-}
+
+figNum          <- ifelse(age_type == "adult", "3", "15")
+age_groups      <- c("ageStd")
+
 
 if (age_type == "adult"){
   variables    <- c("prev_bmi_l185", "prev_bmi_30")
@@ -24,18 +21,6 @@ data_timechange_scatters <- read_data_timechange(variables, sexes, age_groups) %
   filter(start.year == plot.start.year & end.year == plot.end.year) %>%
   mutate(start.year = plot.start.year, end.year = plot.end.year) %>%
   select(-PP.increase) 
-
-
-###################### DECOMPOSITION PLOTS  DATA ###############################
-data_decomposition <- read_data_timechange(variables, sexes, age_groups = age_groups, age_type = "ageStd", region_level = "Country",timechange_type = "absolute") %>% filter(start.year == plot.start.year, end.year == plot.end.year)
-
-overall_change <- data_decomposition %>%
-  group_by(start.year, end.year, age_group, Country, sex) %>%
-  summarise(overall_change = sum(mean)) %>%
-  ungroup()
-
-data_decomposition          <- left_join(data_decomposition, overall_change, by = c("Country", "age_group", "start.year", "end.year", "sex"))
-data_decomposition$variable <- factor(data_decomposition$variable, levels = variables)
 
 
 ###################### LEVEL VS CHANGE SCATTERS DATA ############################
@@ -101,7 +86,7 @@ for(my_age_group in age_groups){
         arrangeGrob(
           blank,
           arrangeGrob(blank,
-                      textGrob(paste0("   ", ifelse(age_type == "adult", ifelse(appendix, paste0("Women, ", age.longname),"Women"), "Girls")),hjust=0,just = c("left"), x = unit(0.02, "npc"),gp = gpar(col = "black", fontsize = 18)),
+                      textGrob(paste0("   ", ifelse(age_type == "adult", "Women", "Girls")),hjust=0,just = c("left"), x = unit(0.02, "npc"),gp = gpar(col = "black", fontsize = 18)),
                       blank,
                       nrow = 1, widths = c(.5, 10, .5)),
           blank,
@@ -134,7 +119,7 @@ for(my_age_group in age_groups){
         arrangeGrob(
           blank,
           arrangeGrob(blank,
-                      textGrob(paste0("   ", ifelse(age_type == "adult", ifelse(appendix, paste0("Men, ", age.longname),"Men"), "Boys")),hjust=0,just = c("left"), x = unit(0.02, "npc"),gp = gpar(col = "black", fontsize = 18)),
+                      textGrob(paste0("   ", ifelse(age_type == "adult", "Men", "Boys")),hjust=0,just = c("left"), x = unit(0.02, "npc"),gp = gpar(col = "black", fontsize = 18)),
                       blank,
                       nrow = 1, widths = c(.5, 10, .5)),   
           

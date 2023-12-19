@@ -7,6 +7,9 @@ library(grid)
 library(gridExtra)
 library(RColorBrewer)
 
+figsuffix <- ""
+figsuffix <- ifelse(figsuffix == "", "", paste0(" ", figsuffix))
+   
 figNum <- 1
 indir_data <- "S:/Projects/HeightProject/Original dataset/Anthropometrics/adult_bmi_analysis/data_sources_summaries_and_overall/"
 data_adult.file.name <- "summary_bmi_adult18_October2023.csv"
@@ -17,7 +20,6 @@ functionsDir <- "S:/Projects/HeightProject/Original dataset/Anthropometrics/adul
 
 countrylist.file.name <- "country-list-2023-figures.csv"
 countrylist <- read_csv(paste0("S:/Projects/HeightProject/Original dataset/Anthropometrics/adult_bmi_analysis/Figures scripts/Covariates/",countrylist.file.name))
-
 
 source(paste0(functionsDir, "0.2 Bubble plot functions.R"))
 source(paste0(functionsDir, "0.2 Map plotting functions.R"))
@@ -53,7 +55,9 @@ data_adult <- read.csv(paste0(indir_data,data_adult.file.name)) %>%
   left_join(., countrylist, by = "iso")
 
 data_adult$number     <- round(data_adult[,'N_bmi'])
-data_adult$mid_year   <- ifelse(data_adult$mid_year >= (start.year - 3) & data_adult$mid_year < start.year & data_adult$survey_type == "National", start.year, data_adult$mid_year) 
+data_adult$mid_year   <- ifelse(data_adult$mid_year >= (start.year - 3) & data_adult$mid_year < start.year & data_adult$survey_type == "National", start.year, data_adult$mid_year)
+data_adult$mid_year   <- ifelse(data_adult$mid_year == (end.year + 1) & data_adult$survey_type == "National", end.year, data_adult$mid_year)
+
 data_adult            <- subset(data_adult, mid_year>=start.year & mid_year<=end.year & age >= 18 & age < 200)
 data_adult            <- subset(data_adult, number >1)
 
@@ -70,6 +74,8 @@ data_ado   <- read.csv(paste0(indir_data,data_ado.file.name)) %>%
 data_ado$number             <- round(data_ado[,'N_bmi'])
 data_ado$mid_year           <- ifelse(data_ado$mid_year >= (start.year - 3) & data_ado$mid_year < start.year & 
                                         data_ado$survey_type == "National", start.year, data_ado$mid_year)          # Include national studies from up to 3 years before the minimum data_ado year
+data_ado$mid_year           <- ifelse(data_ado$mid_year == (end.year +1) & data_ado$survey_type == "National", end.year, data_ado$mid_year)# Include national studies from up to 3 years before the minimum data_ado year
+
 
 data_ado     <- data_ado[,c("id_study","mid_year","iso","survey_type","urban_rural","sex","age","number","mean_bmi", "se_bmi", "prev_bmi_neg2sd", "prev_bmi_neg2sd_neg1sd", "prev_bmi_neg1sd_1sd", "prev_bmi_1sd_2sd", "prev_bmi_2sd", "check")]
 data_ado     <- subset(data_ado, mid_year >= start.year & mid_year <= end.year & age >= 5 & age < 20)                                 # Subset to ages within range
@@ -145,7 +151,7 @@ blank <- grid.rect(gp=gpar(col=NA, fill = NA))
 
 ### PLOT MAPS OF DATA SOURCES ##################################################
 figNum <- 1
-cairo_pdf(paste0(outdir_folder, "Appendix Figure ", figNum, ".pdf"), height = 15, width = 12,onefile=T)
+cairo_pdf(paste0(outdir_folder, "Appendix Figure ", figNum, figsuffix,".pdf"), height = 15, width = 12,onefile=T)
 
 grid.arrange(textGrob("School-aged children and adolescents",hjust=0, just = c("left"),x = unit(0.01, "npc"),gp = gpar(col = "black", fontsize = 20)),
              ps[[paste0("both", "ado", "map")]],
@@ -161,7 +167,7 @@ dev.off()
 
 ###### PLOT BUBBLE PLOTS #######################################################
 figNum <- 2
-cairo_pdf(paste0(outdir_folder, "Appendix Figure ", figNum, ".pdf"), height = 15, width = 18,onefile=T)
+cairo_pdf(paste0(outdir_folder, "Appendix Figure ", figNum, figsuffix,".pdf"), height = 15, width = 18,onefile=T)
 
 grid.arrange(textGrob("School-aged children and adolescents",hjust=0, just = c("left"),x = unit(0.01, "npc"),gp = gpar(col = "black", fontsize = 20)),
              ps[[paste0("both", "ado", "bubble")]],

@@ -26,11 +26,11 @@ outdir_folder            <- paste0(outdir,"Numbered/")
 
 if(age_type == "adult"){
   variables    <- c("prev_bmi_l185", "prev_bmi_30")
-  figNums       <- c(7, 8)
+  figNums       <- c(5, 6)
   
 } else{
   variables    <- c("prev_bmi_neg2sd", "prev_bmi_2sd")
-  figNums       <- c(16,17)
+  figNums       <- c(17,18)
 }
 
 age_groups   <- c("ageStd")

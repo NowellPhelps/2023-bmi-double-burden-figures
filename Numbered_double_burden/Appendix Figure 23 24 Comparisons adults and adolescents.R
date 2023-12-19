@@ -57,7 +57,7 @@ ps[["legend"]] <- static_scatter_level_v_level(subset, xvar, yvar, my_sex, my_ag
 blank <- grid.rect(gp=gpar(col=NA, fill = NA))
 
 ## (A) PLOT THINNESS RESULTS - APPENDIX FIGURE 16
-figNum <- 3
+figNum <- 23
 cairo_pdf(paste0(outdir_folder, ifelse(appendix, "Appendix Figure ", "Figure "), figNum, figsuffix,".pdf"), height = 12, width = 12, onefile=T)
 
 for(my_age_group in age_groups){
@@ -133,7 +133,7 @@ dev.off()
 
 
 ## (A) PLOT OBESITY RESULTS - APPENDIX FIGURE 17
-figNum <- 4
+figNum <- 24
 cairo_pdf(paste0(outdir_folder, ifelse(appendix, "Appendix Figure ", "Figure "), figNum, figsuffix,".pdf"), height = 12, width = 12, onefile=T)
 
 for(my_age_group in age_groups){

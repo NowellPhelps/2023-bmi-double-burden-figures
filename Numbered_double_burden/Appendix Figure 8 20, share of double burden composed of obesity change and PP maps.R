@@ -8,12 +8,12 @@ age_groups <- c("ageStd")
 if(age_type == "adult"){
   variables    <- c("prev_bmi_30_proportion_double_burden")
   
-  figNums      <- c(11)
+  figNums      <- c(8)
   figNum       <- 5
   
 } else{
   variables    <- c("prev_bmi_2sd_proportion_double_burden")
-  figNums      <- c(19)
+  figNums      <- c(20)
   figNum       <- 5
 }
 

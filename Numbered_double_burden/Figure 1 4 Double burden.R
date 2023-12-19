@@ -6,8 +6,8 @@ if(!(appendix)){
    figNum          <- ifelse(age_type == "adult", 1, 4)
    age_groups      <- c("ageStd")
 } else{
-   figNum          <- 9
-   figsuffix       <- "fig1 by age group"
+   figNum          <- "9"
+   figsuffix       <- ""
    age_groups      <- c("young", "mid", "old")
 }
 
@@ -100,56 +100,53 @@ blank <- grid.rect(gp=gpar(col=NA, fill = NA))
 
 
 if (appendix){
-   cairo_pdf(paste0(outdir_folder, ifelse(appendix, "Appendix Figure ", "Figure "), figNum, figsuffix,".pdf"), height = 14, width = 30, onefile=T)
-   for (my_sex in sexes){
-      for (my_age_group in age_groups){
+   
+   cairo_pdf(paste0(outdir_folder, ifelse(appendix, "Appendix Figure ", "Figure "), figNum, figsuffix,".pdf"), height = 17, width = 17.5, onefile=T)
+   
+   for(my_sex in sexes){
+      for(my_age_group in age_groups){
          
-         if(age_type == "adult"){
-            if(appendix){
-               
-               age.longname <- switch(my_age_group,
-                                      "young" = "20-39 years",
-                                      "mid" = "40-64 years",
-                                      "old" = "65+ years")
-               
-               plot.title <- paste0(ifelse(my_sex=="female", "Women", "Men"), ", ", age.longname)
-            } else{
-               plot.title <- ifelse(my_sex=="female", "Women", "Men")
-               
-            }
-            
-         } else if(age_type == "ado"){
-            plot.title <- ifelse(my_sex=="female", "Girls", "Boys")
-         }
+         age.longname <- switch(my_age_group,
+                                "young" = "20-39 years",
+                                "mid" = "40-64 years",
+                                "old" = "65+ years")
          
-         
-         if(appendix){
-            
-         }
-         
+         plot.title <- paste0(" ",ifelse(my_sex=="female", "Women", "Men"), ", ", age.longname)
          
          grid.arrange(
-            textGrob(plot.title,hjust=0,just = c("left"),x = unit(0.005, "npc"),gp = gpar(col = "black", fontsize = 25)),
-            
             arrangeGrob(
-               arrangeGrob(arrangeGrob(arrangeGrob(arrangeGrob(blank,textGrob("A",hjust=0, just = c("left"),x = unit(0.01, "npc"),gp = gpar(col = "black", fontsize = 20)), nrow =1, widths = c(.3,.7)),
-                                                   blank, ncol = 1, heights = c(1, 10)),ps[[paste(my_sex, "wheels", plot.start.year, my_age_group)]],blank, ps[[paste(my_sex, "wheels", plot.end.year, my_age_group)]], nrow = 1, widths = c(0.13,1,0.12,1,0.12)),
-                           arrangeGrob(blank,blank,blank, nrow = 1, widths = c(19, 2, 19)),
-                           nrow = 2, heights = c(20, 1)),
-               arrangeGrob(textGrob("B",hjust=0,just = c("left"),x = unit(0.01, "npc"),gp = gpar(col = "black", fontsize = 20)),
-                           ps[[paste(my_sex, "prev_double_burden", plot.end.year, "map_level", my_age_group)]],
+               textGrob(plot.title, hjust=0, vjust = 1, just = c("left", "top"),x = unit(0.02, "npc"), gp = gpar(col = "black", fontsize = 30)),
+               blank,
+               arrangeGrob(blank,
+                           ps[[paste(my_sex, "wheels", plot.start.year, my_age_group)]],
+                           blank,
+                           ps[[paste(my_sex, "wheels", plot.end.year, my_age_group)]],
+                           blank,
+                           nrow = 1, widths = c(.5, 10, .2, 10, .5)),
+               
+               blank,
+               arrangeGrob(blank, ps[[paste("legend", "decomposition")]], blank, ps[[paste("legend", "wheel countries")]], blank, 
+                           nrow = 1, widths = c(1,2,1,10,1)),
+               blank,
+               arrangeGrob(blank,
                            ps[[paste(my_sex,"prev_double_burden", "map_timechange", my_age_group)]],
-                           nrow = 3, heights = c(0.1, 1,1)),
-               nrow = 1, widths = c(20,8)),
-            
-            arrangeGrob(blank, ps[[paste("legend", "decomposition")]], blank, ps[[paste("legend", "wheel countries")]], blank,blank, 
-                        nrow = 1, widths = c(2,2.5,2.5,10.5,2.5,8)),
-            
-            nrow = 3, heights = c(1, 25, 3))
-         
+                           blank,
+                           ps[[paste(my_sex, "prev_double_burden", plot.end.year, "map_level", my_age_group)]],
+                           blank,
+                           nrow = 1, widths = c(.5, 10, .12, 10, .5)),
+               ncol = 1,
+               heights = c(1,1,10,1.1,1,1,7)
+            ))
       }
    }
+   
+        
+    
+   
+   
+   
    dev.off()
+   
    
 } else{
    
@@ -157,7 +154,7 @@ if (appendix){
    
    grid.arrange(
       arrangeGrob(
-         textGrob(paste0("A ", ifelse(age_type == "adult", "Women", "Girls")), hjust=0, vjust = 1, just = c("left", "top"),x = unit(0.02, "npc"), gp = gpar(col = "black", fontsize = 30)),
+         textGrob(paste0(" ", ifelse(age_type == "adult", "Women", "Girls")), hjust=0, vjust = 1, just = c("left", "top"),x = unit(0.02, "npc"), gp = gpar(col = "black", fontsize = 30)),
          blank,
          arrangeGrob(blank,
                      ps[[paste("female", "wheels", plot.start.year, my_age_group)]],
@@ -182,7 +179,7 @@ if (appendix){
    
    grid.arrange(
       arrangeGrob(
-         textGrob(paste0("B ", ifelse(age_type == "adult", "Men", "Boys")), hjust=0, vjust = 1, just = c("left", "top"),x = unit(0.02, "npc"), gp = gpar(col = "black", fontsize = 30)),
+         textGrob(paste0(" ", ifelse(age_type == "adult", "Men", "Boys")), hjust=0, vjust = 1, just = c("left", "top"),x = unit(0.02, "npc"), gp = gpar(col = "black", fontsize = 30)),
          blank,
          arrangeGrob(blank,
                      ps[[paste("male", "wheels", plot.start.year, my_age_group)]],

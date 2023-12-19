@@ -3,13 +3,23 @@ figsuffix                <- ifelse(figsuffix == "", "", paste0(" ", figsuffix))
 outdir_folder            <- paste0(outdir,"Numbered/")
 
 
-figNum          <- ifelse(age_type == "adult", 2, 5)
-age_groups      <- c("ageStd")
 
+   
 if(age_type == "adult"){
   proportion_var <- "prev_bmi_30_proportion_double_burden"
+  
+  if(appendix){
+     figNum <- "11"
+     figsuffix <- ""
+     age_groups      <- c("young", "mid", "old")
+  } else{
+     figNum <- 2
+     age_groups      <- c("ageStd")
+  }
+  
 } else{
   proportion_var <- "prev_bmi_2sd_proportion_double_burden"
+  figNum <- 5
 }
 
 
@@ -41,13 +51,23 @@ blank <- grid.rect(gp=gpar(col=NA, fill = NA))
 #### 3 PRINT PDF ###############################################################
 cairo_pdf(paste0(outdir_folder, ifelse(appendix, "Appendix Figure ", "Figure "), figNum, figsuffix,".pdf"), height = 10, width = 17, onefile=T)
 
-grid.arrange(
+
+
+for(my_age_group in age_groups){
    
+   if (appendix){
+      suffix <- switch(my_age_group,
+                             "young" = ", 20-39 years",
+                             "mid" = ", 40-64 years",
+                             "old" = ", 65+ years")
+   } else{
+      suffix <- ""
+   }
    
-   arrangeGrob(
+   grid.arrange(
       arrangeGrob(
          blank,
-         textGrob(ifelse(age_type == "adult", "Women", "Girls"),hjust=0,just = c("left"),x = unit(0.02, "npc"),gp = gpar(col = "black", fontsize = 20)),
+         textGrob(paste0(ifelse(age_type == "adult", "Women", "Girls"), suffix),hjust=0,just = c("left"),x = unit(0.02, "npc"),gp = gpar(col = "black", fontsize = 20)),
          arrangeGrob(blank,
                      ps[[paste("female", proportion_var, plot.start.year, "map_level", my_age_group)]],
                      blank,
@@ -55,7 +75,7 @@ grid.arrange(
                      blank,
                      nrow = 1, widths = c(.5, 10, .1, 10, .5)),
          blank,
-         textGrob(ifelse(age_type == "adult", "Men", "Boys"),hjust=0,just = c("left"),x = unit(0.02, "npc"),gp = gpar(col = "black", fontsize = 20)),
+         textGrob(paste0(ifelse(age_type == "adult", "Men", "Boys"), suffix), hjust=0,just = c("left"),x = unit(0.02, "npc"),gp = gpar(col = "black", fontsize = 20)),
          arrangeGrob(blank,
                      ps[[paste("male", proportion_var, plot.start.year, "map_level", my_age_group)]],
                      blank,
@@ -72,8 +92,10 @@ grid.arrange(
                   ncol = 1, heights = c(3,1,3)),
       nrow = 1, 
       widths = c(10,1))
+}
+
+
    
- )
 
 dev.off()
    

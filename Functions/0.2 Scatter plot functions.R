@@ -172,8 +172,8 @@ static_scatter_timechange_v_level <- function(subset, var, my_sex, my_age_group,
                            y = c(ylims[2]*0.9, 10, -5))
   }
 
-  p <- ggplot(plot_data, aes(x = mean, y = change, colour= Superregion)) +
-    geom_point(alpha = 0.8, size = 2) +
+  p <- ggplot(plot_data, aes(x = mean, y = change)) +
+    geom_point(alpha = 0.8, size = 2, aes(colour= Superregion)) +
     scale_colour_manual(values = sregion_col) +
     ggtitle(plot.title) +
     ylab(yaxislab) +
@@ -190,8 +190,6 @@ static_scatter_timechange_v_level <- function(subset, var, my_sex, my_age_group,
           legend.text = element_text(size = 12), 
           legend.title = element_text(size = 14)) + 
     new_scale_color() +
-    geom_segment(aes(x = l_xvar, xend = u_xvar, y = mean_yvar, yend = mean_yvar, colour = Superregion), linewidth = 3, alpha = 0.3) +
-    geom_segment(aes(y = l_yvar, yend = u_yvar, x = mean_xvar, xend = mean_xvar, colour = Superregion), linewidth = 3, alpha = 0.3) +
     scale_colour_manual(values = sregion_col)
     
   
@@ -209,19 +207,19 @@ static_scatter_timechange_v_level <- function(subset, var, my_sex, my_age_group,
     # add text
     if(var == "prev_bmi_l185" | var == "prev_bmi_neg2sd"){
       p <- p + 
-        geom_text(data = dat_text[c(1),], mapping = aes(x = x, y = y, label = label,),color='darkgray',size=4,hjust=1, vjust=1) +
-        geom_text(data = dat_text[c(2),], mapping = aes(x = x, y = y, label = label,),color='darkgray',size=4,hjust=1, vjust=0)
+        geom_text(data = dat_text[c(1),], mapping = aes(x = x, y = y, label = label),color='darkgray',size=4,hjust=1, vjust=1) +
+        geom_text(data = dat_text[c(2),], mapping = aes(x = x, y = y, label = label),color='darkgray',size=4,hjust=1, vjust=0)
       
     } else if(var == "prev_bmi_30"){
       p <- p + 
-        geom_text(data = dat_text[c(1),], mapping = aes(x = x, y = y, label = label,),color='darkgray',size=4, hjust=0, vjust=1) +
-        geom_text(data = dat_text[c(2),], mapping = aes(x = x, y = y, label = label,),color='darkgray',size=4, hjust=1, vjust=1) +
-        geom_text(data = dat_text[c(3),], mapping = aes(x = x, y = y, label = label,),color='darkgray',size=4, hjust=1, vjust=0.5) 
+        geom_text(data = dat_text[c(1),], mapping = aes(x = x, y = y, label = label),color='darkgray',size=4, hjust=0, vjust=1) +
+        geom_text(data = dat_text[c(2),], mapping = aes(x = x, y = y, label = label),color='darkgray',size=4, hjust=1, vjust=1) +
+        geom_text(data = dat_text[c(3),], mapping = aes(x = x, y = y, label = label),color='darkgray',size=4, hjust=1, vjust=0.5) 
     } else if (var == "prev_bmi_2sd"){
       p <- p + 
-        geom_text(data = dat_text[c(1),], mapping = aes(x = x, y = y, label = label,),color='darkgray',size=4, hjust=1, vjust=1) +
-        geom_text(data = dat_text[c(2),], mapping = aes(x = x, y = y, label = label,),color='darkgray',size=4, hjust=1, vjust=1) +
-        geom_text(data = dat_text[c(3),], mapping = aes(x = x, y = y, label = label,),color='darkgray',size=4, hjust=1, vjust=0.5) 
+        geom_text(data = dat_text[c(1),], mapping = aes(x = x, y = y, label = label),color='darkgray',size=4, hjust=1, vjust=1) +
+        geom_text(data = dat_text[c(2),], mapping = aes(x = x, y = y, label = label),color='darkgray',size=4, hjust=1, vjust=1) +
+        geom_text(data = dat_text[c(3),], mapping = aes(x = x, y = y, label = label),color='darkgray',size=4, hjust=1, vjust=0.5) 
     }
   }
   
