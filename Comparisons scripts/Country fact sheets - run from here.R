@@ -1,5 +1,6 @@
 setwd("S:/Projects/HeightProject/Original dataset/Anthropometrics/adult_bmi_analysis/Figures scripts/Comparisons scripts")
-
+library(ggplot2)
+library(ggrepel)
 source("0.0 utils light.R")
 source("0.0 fact sheet functions.R")
 appendix <- T
@@ -88,11 +89,12 @@ for(age_type in c("ado", "adult")){
       ps[[paste("dotplot stacked", my_country, my_sex, age_type)]] <- make_dotplot(data_level, my_country, my_sex, plot.end.year, age_type, returnLeg = F, option = "stacked")
       ps[[paste("dotplot repel", my_country, my_sex, age_type)]]   <- make_dotplot(data_level, my_country, my_sex, plot.end.year, age_type, returnLeg = F, option = "repel")
       
-      for(var in vars_of_interest){
-         ps[[paste("region rank plot", var, my_country, my_sex, age_type)]] <- make_region_rank_plot(data_level, my_country, my_sex, my_variable = var, plot.start.year = plot.start.year, plot.end.year = plot.end.year, age_type, returnLeg = F, option = "stacked")
-         ps[[paste("histogram country", var, my_country, my_sex, age_type)]] <- make_highlighted_histogram(data_level, my_country, my_sex, my_variable = var, my_year = plot.end.year, age_type, returnLeg = F, option = "country")
-         ps[[paste("histogram region", var, my_country, my_sex, age_type)]] <- make_highlighted_histogram(data_level, my_country, my_sex, my_variable = var, my_year = plot.end.year, age_type, returnLeg = F, option = "region")
+      for(my_variable in vars_of_interest){
+         ps[[paste("region rank plot", my_variable, my_country, my_sex, age_type)]] <- make_region_rank_one_year(data_level, my_country, my_sex, my_variable, my_year = plot.end.year, age_type, returnLeg = F)
          
+         plot_hist_leg <- ifelse(my_variable == "prev_bmi_l185" & my_sex == "female", T, F)
+         ps[[paste("histogram region", my_variable, my_country, my_sex, age_type)]] <- make_highlighted_histogram(data_level, my_country, my_sex, my_variable, my_year = plot.end.year, age_type, plotLeg = plot_hist_leg, option = "region")
+
       }
     }
   }
@@ -100,9 +102,14 @@ for(age_type in c("ado", "adult")){
    ps[[paste("dotplot legend", age_type)]] <- make_dotplot(data_level, my_country, my_sex, plot.end.year, age_type, returnLeg = T, option = "stacked")
 }
 
+arrows <- list()
+for (var in c("prev_bmi_l185", "prev_bmi_30", "prev_bmi_neg2sd", "prev_bmi_2sd")){
+   arrows[[var]] <- make_region_rank_plot_arrow(var)
+}
+
 ########################## PRINT PDF ###########################################
 blank <- grid.rect(gp=gpar(col=NA, fill = NA))
-cairo_pdf("NCD-RisC country factsheets.pdf", height = 12, width = 12, onefile=T) # Dimensions are those for A4
+cairo_pdf("NCD-RisC country factsheets.pdf", height = 11.7, width = 8.3, onefile=T) # Dimensions are those for A4
 
 #for(my_country in unique(countrylist$Country)[[1]]){
 for (my_country in c("Nigeria")){   
@@ -114,27 +121,73 @@ for (my_country in c("Nigeria")){
       
       textGrob(plot.title,hjust=0,just = c("left"),x = unit(0.02, "npc"),gp = gpar(col = "black", fontsize = 18)),
       
+      arrangeGrob(textGrob(expression(bold(underline("Women (20+ years)"))), hjust=0, just = c("left"),x = unit(0.01, "npc"), gp = gpar(col = "black", fontsize = 12)),
+                  texts[[paste("female", my_country, "adult")]],
+                  blank,
+                  arrangeGrob(arrangeGrob(textGrob(expression(bold("Underweight")), hjust=0, just = c("left"),x = unit(0.02, "npc"), gp = gpar(col = "black", fontsize = 10)),
+                                          
+                                          arrangeGrob(ps[[paste("histogram region", "prev_bmi_l185", my_country, "female", "adult")]],
+                                                      ps[[paste("region rank plot", "prev_bmi_l185", my_country, "female", "adult")]],
+                                                      nrow = 1, 
+                                                      widths = c(6,4)),
+                                          
+                                          ncol = 1,
+                                          heights = c(1, 9)),
+                              arrangeGrob(textGrob(expression(bold("Obesity")), hjust=0, just = c("left"),x = unit(0.02, "npc"), gp = gpar(col = "black", fontsize = 10)),
+                                          arrangeGrob(ps[[paste("histogram region", "prev_bmi_30", my_country, "female", "adult")]],
+                                                      ps[[paste("region rank plot", "prev_bmi_30", my_country, "female", "adult")]],
+                                                      nrow = 1, 
+                                                      widths = c(6,4)),
+                                          ncol = 1,
+                                          heights = c(1, 9)),
+                              nrow = 1, widths = c(1, 1)),
+                  ncol = 1,
+                  heights = c(1, 2,.5, 8.5)),
+      blank,
+      arrangeGrob(textGrob(expression(bold(underline("Men (20+ years)"))), hjust=0, just = c("left"),x = unit(0.01, "npc"), gp = gpar(col = "black", fontsize = 12)),
+                  texts[[paste("male", my_country, "adult")]],
+                  blank,
+                  arrangeGrob(arrangeGrob(textGrob(expression(bold("Underweight")), hjust=0, just = c("left"),x = unit(0.02, "npc"), gp = gpar(col = "black", fontsize = 10)),
+                                          
+                                          arrangeGrob(ps[[paste("histogram region", "prev_bmi_l185", my_country, "male", "adult")]],
+                                                      ps[[paste("region rank plot", "prev_bmi_l185", my_country, "male", "adult")]],
+                                                      nrow = 1, 
+                                                      widths = c(6,4)),
+                                          
+                                          ncol = 1,
+                                          heights = c(1, 9)),
+                              arrangeGrob(textGrob(expression(bold("Obesity")), hjust=0, just = c("left"),x = unit(0.02, "npc"), gp = gpar(col = "black", fontsize = 10)),
+                                          arrangeGrob(ps[[paste("histogram region", "prev_bmi_30", my_country, "male", "adult")]],
+                                                      ps[[paste("region rank plot", "prev_bmi_30", my_country, "male", "adult")]],
+                                                      nrow = 1, 
+                                                      widths = c(6,4)),
+                                          ncol = 1,
+                                          heights = c(1, 9)),
+                              nrow = 1, widths = c(1, 1)),
+                  ncol = 1,
+                  heights = c(1, 2,.5, 8.5)),
+      
+      blank,
       arrangeGrob(textGrob(expression(bold(underline("Girls (5-19 years)"))), hjust=0, just = c("left"),x = unit(0.01, "npc"), gp = gpar(col = "black", fontsize = 12)),
                   texts[[paste("female", my_country, "ado")]],
                   blank,
                   arrangeGrob(arrangeGrob(textGrob(expression(bold("Thinness")), hjust=0, just = c("left"),x = unit(0.02, "npc"), gp = gpar(col = "black", fontsize = 10)),
-                                          arrangeGrob(ps[[paste("region rank plot", "prev_bmi_neg2sd", my_country, "female", "ado")]],
-                                                      ps[[paste("histogram country", "prev_bmi_neg2sd", my_country, "female", "ado")]],
-                                                      nrow = 1, widths = c(0.6, 0.4)),
+                                          
+                                          arrangeGrob(ps[[paste("histogram region", "prev_bmi_neg2sd", my_country, "female", "ado")]],
+                                                      ps[[paste("region rank plot", "prev_bmi_neg2sd", my_country, "female", "ado")]],
+                                                      nrow = 1, 
+                                                      widths = c(6,4)),
+                                          
                                           ncol = 1,
                                           heights = c(1, 9)),
                               arrangeGrob(textGrob(expression(bold("Obesity")), hjust=0, just = c("left"),x = unit(0.02, "npc"), gp = gpar(col = "black", fontsize = 10)),
-                                          arrangeGrob(ps[[paste("region rank plot", "prev_bmi_2sd", my_country, "female", "ado")]],
-                                                      ps[[paste("histogram country", "prev_bmi_2sd", my_country, "female", "ado")]],
-                                                      nrow = 1, widths = c(0.6, 0.4)),
+                                          arrangeGrob(ps[[paste("histogram region", "prev_bmi_2sd", my_country, "female", "ado")]],
+                                                      ps[[paste("region rank plot", "prev_bmi_2sd", my_country, "female", "ado")]],
+                                                      nrow = 1, 
+                                                      widths = c(6,4)),
                                           ncol = 1,
                                           heights = c(1, 9)),
-                     
-                              arrangeGrob(ps[[paste("dotplot stacked", my_country, "female", "ado")]],
-                                          ps[[paste("dotplot legend", "ado")]],
-                                          nrow = 2,
-                                          heights = c(0.6,.4)),
-                              nrow = 1, widths = c(1, 1, 0.5)),
+                              nrow = 1, widths = c(1, 1)),
                   ncol = 1,
                   heights = c(1, 2,.5, 8.5)),
       blank,
@@ -142,79 +195,30 @@ for (my_country in c("Nigeria")){
                   texts[[paste("male", my_country, "ado")]],
                   blank,
                   arrangeGrob(arrangeGrob(textGrob(expression(bold("Thinness")), hjust=0, just = c("left"),x = unit(0.02, "npc"), gp = gpar(col = "black", fontsize = 10)),
-                                          arrangeGrob(ps[[paste("region rank plot", "prev_bmi_neg2sd", my_country, "male", "ado")]],
-                                                      ps[[paste("histogram country", "prev_bmi_neg2sd", my_country, "male", "ado")]],
-                                                      nrow = 1, widths = c(0.6, 0.4)),
+                                          
+                                          arrangeGrob(ps[[paste("histogram region", "prev_bmi_neg2sd", my_country, "male", "ado")]],
+                                                      ps[[paste("region rank plot", "prev_bmi_neg2sd", my_country, "male", "ado")]],
+                                                      nrow = 1, 
+                                                      widths = c(6,4)),
+                                          
                                           ncol = 1,
                                           heights = c(1, 9)),
                               arrangeGrob(textGrob(expression(bold("Obesity")), hjust=0, just = c("left"),x = unit(0.02, "npc"), gp = gpar(col = "black", fontsize = 10)),
-                                          arrangeGrob(ps[[paste("region rank plot", "prev_bmi_2sd", my_country, "male", "ado")]],
-                                                      ps[[paste("histogram country", "prev_bmi_2sd", my_country, "male", "ado")]],
-                                                      nrow = 1, widths = c(0.6, 0.4)),
+                                          arrangeGrob(ps[[paste("histogram region", "prev_bmi_2sd", my_country, "male", "ado")]],
+                                                      ps[[paste("region rank plot", "prev_bmi_2sd", my_country, "male", "ado")]],
+                                                      nrow = 1, 
+                                                      widths = c(6,4)),
                                           ncol = 1,
                                           heights = c(1, 9)),
-                              
-                              arrangeGrob(ps[[paste("dotplot stacked", my_country, "male", "ado")]],
-                                          ps[[paste("dotplot legend", "ado")]],
-                                          nrow = 2,
-                                          heights = c(0.6,.4)),
-                              nrow = 1, widths = c(1, 1, 0.5)),
+                              nrow = 1, widths = c(1, 1)),
                   ncol = 1,
                   heights = c(1, 2,.5, 8.5)),
       blank,
-      arrangeGrob(textGrob(expression(bold(underline("Women (20+ years)"))), hjust=0, just = c("left"),x = unit(0.01, "npc"), gp = gpar(col = "black", fontsize = 12)),
-                  texts[[paste("female", my_country, "adult")]],
-                  blank,
-                  arrangeGrob(arrangeGrob(textGrob(expression(bold("Thinness")), hjust=0, just = c("left"),x = unit(0.02, "npc"), gp = gpar(col = "black", fontsize = 10)),
-                                          arrangeGrob(ps[[paste("region rank plot", "prev_bmi_l185", my_country, "female", "adult")]],
-                                                      ps[[paste("histogram country", "prev_bmi_l185", my_country, "female", "adult")]],
-                                                      nrow = 1, widths = c(0.6, 0.4)),
-                                          ncol = 1,
-                                          heights = c(1, 9)),
-                              arrangeGrob(textGrob(expression(bold("Obesity")), hjust=0, just = c("left"),x = unit(0.02, "npc"), gp = gpar(col = "black", fontsize = 10)),
-                                          arrangeGrob(ps[[paste("region rank plot", "prev_bmi_30", my_country, "female", "adult")]],
-                                                      ps[[paste("histogram country", "prev_bmi_30", my_country, "female", "adult")]],
-                                                      nrow = 1, widths = c(0.6, 0.4)),
-                                          ncol = 1,
-                                          heights = c(1, 9)),
-                              
-                              arrangeGrob(ps[[paste("dotplot stacked", my_country, "female", "adult")]],
-                                          ps[[paste("dotplot legend", "adult")]],
-                                          nrow = 2,
-                                          heights = c(0.6,.4)),
-                              nrow = 1, widths = c(1, 1, 0.5)),
-                  ncol = 1,
-                  heights = c(1, 2,.5, 8.5)),
-      blank,
-      arrangeGrob(textGrob(expression(bold(underline("Men (20+ years)"))), hjust=0, just = c("left"),x = unit(0.01, "npc"), gp = gpar(col = "black", fontsize = 12)),
-                  texts[[paste("male", my_country, "adult")]],
-                  blank,
-                  arrangeGrob(arrangeGrob(textGrob(expression(bold("Thinness")), hjust=0, just = c("left"),x = unit(0.02, "npc"), gp = gpar(col = "black", fontsize = 10)),
-                                          arrangeGrob(ps[[paste("region rank plot", "prev_bmi_l185", my_country, "male", "adult")]],
-                                                      ps[[paste("histogram country", "prev_bmi_l185", my_country, "male", "adult")]],
-                                                      nrow = 1, widths = c(0.6, 0.4)),
-                                          ncol = 1,
-                                          heights = c(1, 9)),
-                              arrangeGrob(textGrob(expression(bold("Obesity")), hjust=0, just = c("left"),x = unit(0.02, "npc"), gp = gpar(col = "black", fontsize = 10)),
-                                          arrangeGrob(ps[[paste("region rank plot", "prev_bmi_30", my_country, "male", "adult")]],
-                                                      ps[[paste("histogram country", "prev_bmi_30", my_country, "male", "adult")]],
-                                                      nrow = 1, widths = c(0.6, 0.4)),
-                                          ncol = 1,
-                                          heights = c(1, 9)),
-                              
-                              arrangeGrob(ps[[paste("dotplot stacked", my_country, "male", "adult")]],
-                                          ps[[paste("dotplot legend", "adult")]],
-                                          nrow = 2,
-                                          heights = c(0.6,.4)),
-                              nrow = 1, widths = c(1, 1, 0.5)),
-                  ncol = 1,
-                  heights = c(1, 2,.5, 8.5)),
       
-      blank,
       arrangeGrob(textGrob(expression(bold(underline("Notes"))), hjust=0, just = c("left"),x = unit(0.01, "npc"), gp = gpar(col = "black", fontsize = 12)),
                   textGrob("• These estimates are as reported in NCD Risk Factor Collaboration \"XXXXX\"", hjust=0, just = c("left"),x = unit(0.03, "npc"), gp = gpar(col = "black", fontsize = 9)),
-                  textGrob("• See Methods and Appendix of above for detailed statistical methodology, as well as [[link to NCD-RisC methods page]].", hjust=0, just = c("left"),x = unit(0.03, "npc"), gp = gpar(col = "black", fontsize = 9)),
-                  textGrob("* For a full list of data sources please see Appendix Table 1 of publication above [[or link to Zenodo]].", hjust=0, just = c("left"),x = unit(0.03, "npc"), gp = gpar(col = "black", fontsize = 9)),
+                  textGrob(paste0("• Estimates are informed both by data from ", my_country, " and by data from other countries, through a geographical hierarchy. See Methods and Appendix of above for detailed statistical methodology, as well as [[link to NCD-RisC methods page]]."), hjust=0, just = c("left"),x = unit(0.03, "npc"), gp = gpar(col = "black", fontsize = 9)),
+                  textGrob("*  For a full list of data sources please see Appendix Table 1 of publication above [[or link to Zenodo]].", hjust=0, just = c("left"),x = unit(0.03, "npc"), gp = gpar(col = "black", fontsize = 9)),
                   ncol = 1),
       ncol = 1,
       heights = c(0.4,3,0.05,3,0.05,3,0.05,3,0.05, 0.6)
@@ -222,3 +226,4 @@ for (my_country in c("Nigeria")){
    
 }
 dev.off()
+
