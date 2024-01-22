@@ -1,7 +1,7 @@
 library(tidyverse)
 library(plotly)
 library(RColorBrewer)
-library(rgdal)
+#library(rgdal)
 library(gridExtra)
 library(grid)
 library(ggnewscale)

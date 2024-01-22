@@ -166,15 +166,21 @@ make_region_rank_one_year <- function(plot_data, my_country, my_sex, my_variable
             axis.title.x = element_blank(),
             axis.ticks.length = unit(0, "pt"),
             plot.title = element_text(size = 8, face = "bold")) +
-      ggtitle(paste0(plot_region, ", ", my_year)) +
+      ggtitle(plot_region) +
       scale_x_continuous(breaks = c(0,1), limits = c(1,2), position = "top") +
       scale_y_continuous(limits = c(0.5, nrow(plot_data) + 0.5), expand = expansion(mult = c(0, 0)))+ 
       theme(legend.position = "none")
    
+   
    if(returnLeg){
-      p <- get_legend(p + theme(legend.title = element_blank()))
+      p <- get_legend(p + theme(legend.title = element_blank())) 
    } else{
       p <- p + theme(legend.position = "none")
+      
+      n_names <- nrow(plot_data)
+      blank <- grid.rect(gp=gpar(col=NA, fill = NA))
+      
+      p <- arrangeGrob(p, blank, ncol = 1, heights = c(3/20 + (n_names/20), (17-n_names)/20))
    }
    
    return(p)
@@ -288,7 +294,7 @@ make_highlighted_histogram <- function(plot_data, my_country, my_sex, my_variabl
                mapping = aes(x = rank, y = mean),
                inherit.aes = F,
                stat = "identity",
-               fill = "blue") +
+               fill = "royalblue") +
       theme_classic() +
       theme(panel.grid.major.x = element_blank(),
             axis.line = element_blank(),
@@ -298,12 +304,23 @@ make_highlighted_histogram <- function(plot_data, my_country, my_sex, my_variabl
             plot.title = element_text(size = 8, face = "bold")) +
       scale_y_continuous(limits = ylims, expand = c(0,0)) +
       scale_x_continuous(breaks = c(1,50, 100, 150, 200),  limits = c(0, 201), expand = c(0,0)) +
-      ggtitle(paste0("World, ", plot.end.year)) +
+      ggtitle(paste0("World")) +
       xlab("Country ranking")+
       ylab("Prevalence (%)")
    
    if(option == "region"){
       subdata <- plot_data %>% filter(Country == my_country)
+      
+      if(my_sex == "female" & age_type == "adult" & my_variable == "prev_bmi_l185"){
+         if(subdata$rank >= 100){
+            nudge.x <- 150 - subdata$rank
+         } else{
+            nudge.x <- 50 - subdata$rank
+         }
+         
+      } else{
+         nudge.x <- 100 - subdata$rank
+      }
       
       p <- p + 
          coord_cartesian(clip = "off") +
@@ -313,7 +330,7 @@ make_highlighted_histogram <- function(plot_data, my_country, my_sex, my_variabl
             aes(label = Country),
             force_pull   = 2, # do not pull toward data points
             nudge_y  = max(plot_data$mean)/2,
-            nudge_x = 100 - subdata$rank,
+            nudge_x = nudge.x,
             color = "blue", # Needed for Geom_text not label
             direction    = "both",
             segment.curvature = ifelse(subdata$rank >= 100, -1e-20,1e-20),
@@ -337,8 +354,8 @@ make_highlighted_histogram <- function(plot_data, my_country, my_sex, my_variabl
       p <- p + 
          theme(legend.title = element_blank(),
                legend.position = c(legend.x, legend.y),
-               legend.text=element_text(size= 7),
-               legend.key.size = unit(7, "pt"))
+               legend.text=element_text(size= 6),
+               legend.key.size = unit(6, "pt"))
          
    }else{
       p <- p + theme(legend.position = "none")
@@ -376,11 +393,28 @@ get_source_text<- function(N_all, N_natl, my_country, my_sex, age_type){
 get_change_text <- function(pp, change, l_change, u_change){
    
    if(pp < 0.2){
-      change_text <- paste('<span style="color:darkgreen">a decrease of ', round(abs(change)), '(', round(l_change),'-',round(u_change),') percentage points </span>')
+      
+      if (round(u_change) > 0){
+         change_text <- paste0('<span style="color:darkgreen">a decrease</span> of ', round(abs(change)), ' (', -round(u_change),' to ',round(abs(l_change)),') percentage points')
+         
+      } else{
+         change_text <- paste0('<span style="color:darkgreen">a decrease</span> of ', round(abs(change)), ' (', round(abs(u_change)),'-',round(abs(l_change)),') percentage points')
+         
+      }
+      
+      
    } else if(pp <= 0.8){
-      change_text <- "with no observable change"
+      change_text <- "with no distinguishable change"
    }else {
-      change_text <- paste0('<span style="color:red">an increase of ', round(change), '(',round(l_change),'-',round(u_change),') percentage points </span>')
+      
+      if (round(l_change) < 0){
+         change_text <- paste0('<span style="color:red">an increase</span> of ', round(change), ' (',round(l_change),' to ',round(u_change),') percentage points')
+      } else{
+         change_text <- paste0('<span style="color:red">an increase</span> of ', round(change), ' (',round(l_change),'-',round(u_change),') percentage points ')
+         
+      }
+      
+      
    }
    
    return(change_text)
@@ -461,12 +495,12 @@ get_text_description <- function(data_level, data_change, my_country, my_sex, ag
       underweight_name <- "Thinness"
    }
    
-   text1 <- paste0('• ', underweight_name, ' in ', my_country, ' was ', round(prev_underweight),'% (',round(l_underweight),'-',round(u_underweight),') in 2022, ',get_change_text(underweight.pp.increase, underweight.change, l_underweight.change, u_underweight.change),' since 1990. It was ranked ', rank_region_underweight, ' in ', my_region, ', and ', rank_world_underweight, ' in the world.')
-   text2 <- paste0('• Obesity was ', round(prev_obesity),'% (',round(l_obesity),'-',round(u_obesity),') in 2022, ',get_change_text(obesity.pp.increase, obesity.change,l_obesity.change, u_obesity.change), ' since 1990. It was ranked ', rank_region_obesity, ' in ', my_region, ', and ', rank_world_obesity, ' in the world.')
+   text1 <- paste0('• ', underweight_name, ' was ', round(prev_underweight),'% (',round(l_underweight),'-',round(u_underweight),') in 2022, ',get_change_text(underweight.pp.increase, underweight.change, l_underweight.change, u_underweight.change),' from 1990. ', my_country, ' was ranked ', rank_region_underweight, ' in ', my_region, ' and ', rank_world_underweight, ' in the world.')
+   text2 <- paste0('• Obesity was ', round(prev_obesity),'% (',round(l_obesity),'-',round(u_obesity),') in 2022, ',get_change_text(obesity.pp.increase, obesity.change,l_obesity.change, u_obesity.change), ' from 1990. ', my_country, ' was ranked ', rank_region_obesity, ' in ', my_region, ' and ', rank_world_obesity, ' in the world.')
    
-   texttext <- arrangeGrob(gridtext::richtext_grob(text_sources, hjust=0, x = unit(0.02, "npc"), gp = gpar(col = "black", fontsize = 9)),
-                           gridtext::richtext_grob(text1, hjust=0, x = unit(0.02, "npc"), gp = gpar(col = "black", fontsize = 9)),
-                           gridtext::richtext_grob(text2, hjust=0, x = unit(0.02, "npc"), gp = gpar(col = "black", fontsize = 9)),
+   texttext <- arrangeGrob(gridtext::richtext_grob(text_sources, hjust=0, x = unit(0.02, "npc"), halign = 0, gp = gpar(col = "black", fontsize = 8)),
+                           gridtext::richtext_grob(text1, hjust=0, x = unit(0.02, "npc"), halign = 0,gp = gpar(col = "black", fontsize = 8)),
+                           gridtext::richtext_grob(text2, hjust=0, x = unit(0.02, "npc"), halign = 0,gp = gpar(col = "black", fontsize = 8)),
                            ncol = 1)
    
    return(texttext)
