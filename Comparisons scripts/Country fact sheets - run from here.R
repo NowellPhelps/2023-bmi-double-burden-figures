@@ -61,7 +61,8 @@ ps <- list()
 
 countrylist <- countrylist[order(countrylist$Country),]
 
-texts <- list()
+text_prevalences <- list()
+text_sources     <- list()
 
 for(age_type in c("ado", "adult")){
    if (age_type == "ado"){
@@ -72,29 +73,23 @@ for(age_type in c("ado", "adult")){
       data_sources <- data_sources_adult
    }
    
- # for (my_country in unique(countrylist$Country)){
    for (my_country in c("Nigeria")){    
    print(my_country)
+   
+   text_sources[[paste(my_country, age_type)]] <- get_text_sources(my_country, age_type, data_sources)
+   
     for(my_sex in sexes){
        
-      n_sources_all  <- data_sources$N_all[which(data_sources$sex == ifelse(my_sex == "male", 1, 2) & data_sources$Country == my_country)]
-      n_sources_natl <- data_sources$N_natl[which(data_sources$sex == ifelse(my_sex == "male", 1, 2) & data_sources$Country == my_country)]
-      
-      texts[[paste(my_sex, my_country, age_type)]] <- get_text_description(data_level, data_change, my_country, my_sex, age_type, n_sources_all, n_sources_natl)
-
       plot.title <- ifelse(my_sex == "female",
                            ifelse(age_type == "ado", "Girls", "Women"),
                            ifelse(age_type == "ado", "Boys", "Men"))
-      
-      ps[[paste("dotplot stacked", my_country, my_sex, age_type)]] <- make_dotplot(data_level, my_country, my_sex, plot.end.year, age_type, returnLeg = F, option = "stacked")
-      ps[[paste("dotplot repel", my_country, my_sex, age_type)]]   <- make_dotplot(data_level, my_country, my_sex, plot.end.year, age_type, returnLeg = F, option = "repel")
-      
-      ps[[paste("scatter region", my_country, my_sex, age_type)]] <- make_victor_scatter(data_level, my_country, my_sex, my_x_variable = vars_of_interest[1], my_y_variable = vars_of_interest[2], my_year = plot.end.year, age_type, plotLeg = F, option = "region")
-         
+     
       ps[[paste("minitrend", my_country, my_sex, age_type)]] <- make_mini_trends(data_level, my_country, my_sex, age_type, plotLeg = F)
 
       
       for(my_variable in vars_of_interest){
+         
+         text_prevalences[[paste(my_variable, my_country, age_type, my_sex)]] <- get_text_prevalences(data_level, data_change, my_country, my_variable, age_type, my_sex)
          
          ps[[paste("region rank plot", my_variable, my_country, my_sex, age_type)]] <- make_region_rank_one_year(data_level, my_country, my_sex, my_variable, my_year = plot.end.year, age_type, returnLeg = F)
          
@@ -103,8 +98,6 @@ for(age_type in c("ado", "adult")){
          ps[[paste("beeswarm", my_variable, my_country, my_sex, age_type)]]  <- make_beeswarm_plot(data_level, my_country, my_sex, my_variable, my_year = plot.end.year, age_type, plotLeg = F)
             
       }
-      
-      
     }
    }
    
@@ -118,7 +111,7 @@ for (var in c("prev_bmi_l185", "prev_bmi_30", "prev_bmi_neg2sd", "prev_bmi_2sd")
 
 ########################## PRINT PDF ###########################################
 blank <- grid.rect(gp=gpar(col=NA, fill = NA))
-suffix <- " bees"
+suffix <- " test"
 cairo_pdf(paste0("NCD-RisC country factsheet Nigeria", suffix, ".pdf"), height = 11.7, width = 8.3, onefile=T) # Dimensions are those for A4
 
 #for(my_country in unique(countrylist$Country)[[1]]){
@@ -131,89 +124,53 @@ for (my_country in c("Nigeria")){
       
       textGrob(plot.title,hjust=0,just = c("left"),x = unit(0.005, "npc"),gp = gpar(col = "black", fontsize = 15)),
       
-      arrangeGrob(textGrob(expression(bold("Women (20+ years)")), hjust=0, just = c("left"),x = unit(0.01, "npc"), gp = gpar(col = "black", fontsize = 11)),
-                  texts[[paste("female", my_country, "adult")]],
+      arrangeGrob(textGrob(expression(bold("Adults (20+ years)")), hjust=0, just = c("left"),x = unit(0.01, "npc"), gp = gpar(col = "black", fontsize = 12)),
+                  textGrob(text_sources[[paste(my_country, "adult")]], hjust=0, x = unit(0.01, "npc"), gp = gpar(col = "black", fontsize = 8)),
                   blank,
-                  arrangeGrob(arrangeGrob(richtext_grob(paste0("**Underweight (",plot.end.year, ")**"), hjust=0, x = unit(0.02, "npc"), gp = gpar(col = "black", fontsize = 10)),
+                  arrangeGrob(arrangeGrob(arrangeGrob(richtext_grob(paste0("**Female obesity (", plot.end.year,")**"), hjust=0, x = unit(0.02, "npc"), gp = gpar(col = "black", fontsize = 10)),
+                                                      text_prevalences[[paste("prev_bmi_30", my_country, "adult", "female")]],
+                                                      arrangeGrob(ps[[paste("beeswarm", "prev_bmi_30", my_country, "female", "adult")]],
+                                                                  ps[[paste("region rank plot", "prev_bmi_30", my_country, "female", "adult")]],
+                                                                  blank,
+                                                                  nrow = 1, 
+                                                                  widths = c(3,4,3)),
+                                                      
+                                                      ncol = 1,
+                                                      heights = c(0.8, 1, 9.2)),
                                           
-                                          arrangeGrob(ps[[paste("beeswarm", "prev_bmi_l185", my_country, "female", "adult")]],
-                                                      ps[[paste("region rank plot", "prev_bmi_l185", my_country, "female", "adult")]],
-                                                      blank,
-                                                      nrow = 1, 
-                                                      widths = c(3,4,3)),
+                                          arrangeGrob(richtext_grob(paste0("**Male obesity (", plot.end.year,")**"), hjust=0, x = unit(0.02, "npc"), gp = gpar(col = "black", fontsize = 10)),
+                                                      text_prevalences[[paste("prev_bmi_30", my_country, "adult", "male")]],
+                                                      arrangeGrob(ps[[paste("beeswarm",  "prev_bmi_30", my_country, "male", "adult")]],
+                                                                  ps[[paste("region rank plot", "prev_bmi_30", my_country, "male", "adult")]],
+                                                                  blank,
+                                                                  nrow = 1, 
+                                                                  widths = c(3,4,3)),
+                                                      ncol = 1,
+                                                      heights = c(0.8, 1, 9.2)),
                                           
-                                          ncol = 1,
-                                          heights = c(1, 9)),
-                              arrangeGrob(richtext_grob(paste0("**Obesity (", plot.end.year,")**"), hjust=0, x = unit(0.02, "npc"), gp = gpar(col = "black", fontsize = 10)),
-                                          arrangeGrob(ps[[paste("beeswarm",  "prev_bmi_30", my_country, "female", "adult")]],
-                                                      ps[[paste("region rank plot", "prev_bmi_30", my_country, "female", "adult")]],
-                                                      blank,
-                                                      nrow = 1, 
-                                                      widths = c(3,4,3)),
-                                          ncol = 1,
-                                          heights = c(1, 9)),
-                              nrow = 1, widths = c(1, 1)),
-                  ncol = 1,
-                  heights = c(1, 2,.5, 8.5)),
-      blank,
-      arrangeGrob(textGrob(expression(bold("Men (20+ years)")), hjust=0, just = c("left"),x = unit(0.01, "npc"), gp = gpar(col = "black", fontsize = 11)),
-                  texts[[paste("male", my_country, "adult")]],
+                                          nrow = 1, widths = c(1, 1)),
+                              
+                              blank, # underweight, 
+                              ncol = 1, 
+                              heights = c(1,1)),
+                  ncol = 1, 
+                  heights = c(.5,.2,.2, 10)),
+      
+      arrangeGrob(textGrob(expression(bold("Children and adolescents (5-19 years")), hjust=0, just = c("left"),x = unit(0.01, "npc"), gp = gpar(col = "black", fontsize = 12)),
                   blank,
-                  arrangeGrob(arrangeGrob(richtext_grob(paste0("**Underweight (", plot.end.year,")**"), hjust=0, x = unit(0.02, "npc"), gp = gpar(col = "black", fontsize = 10)),
-                                          
-                                          arrangeGrob(ps[[paste("histogram region", "prev_bmi_l185", my_country, "male", "adult")]],
-                                                      ps[[paste("region rank plot", "prev_bmi_l185", my_country, "male", "adult")]],
-                                                      blank,
-                                                      nrow = 1, 
-                                                      widths = c(3,4,3)),
-                                          
-                                          ncol = 1,
-                                          heights = c(1, 9)),
-                              arrangeGrob(richtext_grob(paste0("**Obesity (", plot.end.year,")**"), hjust=0, x = unit(0.02, "npc"), gp = gpar(col = "black", fontsize = 10)),
-                                          arrangeGrob(ps[[paste("histogram region", "prev_bmi_30", my_country, "male", "adult")]],
-                                                      ps[[paste("region rank plot", "prev_bmi_30", my_country, "male", "adult")]],
-                                                      blank,
-                                                      nrow = 1, 
-                                                      widths = c(3,4,3)),
-                                          ncol = 1,
-                                          heights = c(1, 9)),
-                              nrow = 1, widths = c(1, 1)),
-                  ncol = 1,
-                  heights = c(1, 2,.5, 8.5)),
-      
-      blank,
-      arrangeGrob(textGrob(expression(bold("Girls (5-19 years)")), hjust=0, just = c("left"),x = unit(0.01, "npc"), gp = gpar(col = "black", fontsize = 11)),
-                  texts[[paste("female", my_country, "ado")]],
-                  blank,
-                  arrangeGrob(arrangeGrob(richtext_grob(paste0("**Thinness (", plot.end.year,")**"), hjust=0, x = unit(0.02, "npc"), gp = gpar(col = "black", fontsize = 10)),
-                                          ps[[paste("region rank plot", "prev_bmi_neg2sd", my_country, "female", "ado")]],
-                                          
-                                          ncol = 1,
-                                          heights = c(1, 9)),
-                              arrangeGrob(richtext_grob(paste0("**Obesity (", plot.end.year,")**"), hjust=0, x = unit(0.02, "npc"), gp = gpar(col = "black", fontsize = 10)),
-                                          ps[[paste("region rank plot", "prev_bmi_2sd", my_country, "female", "ado")]],
-                                          ncol = 1,
-                                          heights = c(1, 9)),
-                              ps[[paste("scatter region", my_country, "female", "ado")]],
-                              blank,
-                              nrow = 1, widths = c(.5,.5, .5,.5)),
-                  ncol = 1,
-                  heights = c(1, 2,.5, 8.5)),
-      blank,
-      blank, # boys
-      blank,
-      
-      
+                  ncol = 1, 
+                  heights = c(1,10)),
       
       arrangeGrob(richtext_grob("**Notes**", hjust=0, x = unit(0.01, "npc"), gp = gpar(col = "black", fontsize = 11)),
                   textGrob("• These estimates, and methodology for their generation, are as reported in NCD Risk Factor Collaboration \"XXXXX\"", hjust=0, just = c("left"),x = unit(0.03, "npc"), gp = gpar(col = "black", fontsize = 8)),
                   textGrob(paste0("• Estimates are informed both by data from ", my_country, " and by data from other countries, through a geographical hierarchy. See Methods of above."), hjust=0, just = c("left"),x = unit(0.03, "npc"), gp = gpar(col = "black", fontsize = 8)),
                   textGrob("*  For a full list of data sources please see Appendix Table 1 of publication above [[or link to Zenodo]].", hjust=0, just = c("left"),x = unit(0.03, "npc"), gp = gpar(col = "black", fontsize = 8)),
                   ncol = 1),
+      
       ncol = 1,
-      heights = c(0.4,3,0.05,3,0.05,3,0.05,3,0.05, 0.6)
+      heights = c(0.4,6.1,6.1, 0.6)
    )
-   
+      
 }
-dev.off()
 
+dev.off()
