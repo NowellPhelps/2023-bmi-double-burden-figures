@@ -104,6 +104,39 @@ read_data_level <- function(variables, sexes, age_type, region_level, age_level 
 }
 
 
+read_data_ranking <- function(variables, sexes, region_level = "Country", age_type = "ageStd", age_level = "adult"){
+   
+   if(age_level == "adult"){
+      indir_est <- indir_est_adult
+      modelnum  <- modelnum_adult
+   } else if(age_level == "ado"){
+      indir_est <- indir_est_ado
+      modelnum  <- modelnum_ado
+   }
+   
+   
+   data_ranking <- NULL
+   for (my_sex in sexes){
+      for (my_variable in variables){
+         data_ranking.tmp <- read.csv(paste0(indir_est,"Rankings/Model",modelnum,"_",my_sex,"_",my_variable, "_", age_type, "_",region_level,"_ranks.csv")) %>%
+            mutate(sex = my_sex, variable = my_variable, region_level = region_level) 
+         
+         data_ranking      <- rbind(data_ranking, data_ranking.tmp)
+      }
+   }
+   rm(data_ranking.tmp)
+   
+   if(region_level == "Country"){
+      data_ranking <- data_ranking %>%
+         left_join(countrylistold, by = "Country") %>%
+         select(-c(Country, Region, Superregion)) %>%
+         left_join(countrylist, by = "iso")
+   }
+   
+   return(data_ranking)
+}
+
+
 read_data_timechange <- function(variables, sexes, age_groups, age_type = "ageStd", region_level = "Country", timechange_type = "absolute", age_level = "adult"){
 
   if(age_level == "adult"){

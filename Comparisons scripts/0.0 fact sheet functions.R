@@ -1,6 +1,13 @@
 library(ggbeeswarm)
 
-make_region_rank_one_year <- function(plot_data, my_country, my_sex, my_variable, my_year = plot.end.year, age_type, returnLeg = F, uncertainty = F){
+plot_data <- data_level
+rank_data <- data_ranking
+my_year = plot.end.year
+returnLeg = F
+rank_plot = T
+uncertainty = F
+
+make_region_rank_one_year <- function(plot_data, rank_data = NULL, my_country, my_sex, my_variable, my_year = plot.end.year, age_type, returnLeg = F, rank_plot = F){
    
    plot_region <- plot_data$Region[which(plot_data$Country == my_country)][[1]]
    
@@ -9,37 +16,52 @@ make_region_rank_one_year <- function(plot_data, my_country, my_sex, my_variable
       filter(Region == plot_region) %>%
       mutate(ranking = dense_rank(desc(mean))) %>%
       mutate(y = nrow(.) + 1 - ranking) %>%
-      mutate(x = 1) %>%
+      mutate(x = 1.005) %>%
       mutate(col_ind = ifelse(Country == my_country, "1"," 0"))
    
-   if(uncertainty){
-      plot_data <- plot_data %>% 
-         mutate(country_label = paste0(ifelse(ranking < 10, " ", ""), ranking, ". ", Country, " (", round(mean), "%, ", round(l), "-",round(u),")"))
-   } else{
-      plot_data <- plot_data %>% 
-         mutate(country_label = paste0(ifelse(ranking < 10, " ", ""), ranking, ". ", Country, " (", round(mean), "%)"))
-   }
-      
+   plot_data_ranking <- data_ranking %>% 
+      filter(sex == my_sex, variable == my_variable, year == my_year) %>%
+      filter(Region == plot_region) %>%
+      dplyr::rename(mean_ranking = mean, l_ranking = l, u_ranking = u, median_ranking = median)
+   
+   plot_data <- merge(plot_data, plot_data_ranking) %>% 
+      mutate(country_label = paste0(ifelse(ranking < 10, " ", ""), ranking, ". ", Country, " (", round(mean), "%)"))
    
    col_scale <- scale_color_manual(values = c("1" = "blue", "0" = "black"))
    
    p <- ggplot(plot_data, aes(x,y, colour = col_ind)) +
-      geom_text(data = plot_data %>% filter(x == 1), aes(label = country_label), hjust = 0, size = 2) +
+      geom_text(data = plot_data %>% filter(x == 1.005), aes(label = country_label), hjust = 0, size = 2) +
       ylab("") +
       xlab("") +
       col_scale +
       theme_classic() +
       theme(panel.grid = element_blank(),
             axis.line = element_blank(),
-            axis.text = element_blank(),
-            axis.title.x = element_blank(),
+            axis.text.y = element_blank(),
+            axis.title.y = element_blank(),
             axis.ticks.length = unit(0, "pt"),
             plot.title = element_text(size = 8, face = "bold")) +
       ggtitle(plot_region) +
-      scale_x_continuous(breaks = c(0,1), limits = c(1,2), position = "top") +
-      scale_y_continuous(limits = c(0.5, nrow(plot_data) + 0.5), expand = expansion(mult = c(0, 0)))+ 
       theme(legend.position = "none")
    
+   if(rank_plot){
+      p <- p +
+         geom_point(data = plot_data,
+                    shape = 21,
+                    inherit.aes = F,
+                    aes(y = y, x = median_ranking/200, colour = col_ind)) +
+         geom_segment(data = plot_data, 
+                      inherit.aes = F,
+                      aes(y = y, yend = y, x = l_ranking/200, xend = u_ranking/200, colour = col_ind)) +
+         theme(axis.text.x = element_text(size = 6),
+               axis.title.x = element_text(size = 7, hjust = 0)) +
+         xlab("Country ranking") +
+         scale_x_continuous(limits = c(0,2), breaks = c(0.005, 0.5, 1), labels = c(1,100, 200), position = "top") +
+         scale_y_continuous(limits = c(0.5, nrow(plot_data) + 0.5), expand = expansion(mult = c(0, 0))) 
+   } else{
+      p <- p + theme(axis.text.x = element_blank(),
+                     axis.title.x = element_blank())
+   }
    
    if(returnLeg){
       p <- get_legend(p + theme(legend.title = element_blank())) 
@@ -93,7 +115,7 @@ make_highlighted_histogram <- function(plot_data, my_country, my_sex, my_variabl
    p <- ggplot(plot_data, aes(x = rank, y = mean, fill = col_ind)) +
       geom_bar(stat = "identity") +
       scale_fill_manual(values = c("country" = "blue", "region" = "grey30", "non" = "grey70"),
-                        labels = c("country" = "halp", "region" = my_region, "non" = "Other"),
+                        labels = c("country" = "halp", "region" = my_region, "non" = "Other countries"),
                         limits = c("region", "non")) +
       new_scale_fill() +
       geom_bar(plot_data %>% filter(Country == my_country),
@@ -225,7 +247,7 @@ make_beeswarm_plot <- function(plot_data, my_country, my_sex, my_variable, my_ye
          plot.title = element_text(size = 8, face = "bold")) +
    scale_y_continuous(limits = ylims, expand = c(0,0)) +
    scale_x_continuous(expand = c(0,0)) +
-   ggtitle(paste0("All countries")) +
+   ggtitle(paste0("World")) +
    xlab("") +
    ylab("Prevalence (%)") +
    theme(legend.title = element_blank())
@@ -254,9 +276,81 @@ make_beeswarm_plot <- function(plot_data, my_country, my_sex, my_variable, my_ye
    return(p)
 }
 
+# 
+# plot_data <- data_level
+# my_year <- plot.end.year
 
+make_bin_plot <- function(plot_data, my_country, my_sex, my_variable, my_year, age_type, returnLeg = F){
+   #  Option takes "country" or "region"
+   # "country" highlights country only
+   # "region" highlights country and other countries in region
+   
+   if(my_variable == "prev_bmi_30"){
+      bin.width <- 5
+      centre <- 2.5
+   } else {
+      bin.width <- 2
+      centre <- 1
+   }
+   
+   my_region <- unique(plot_data$Region[which(plot_data$Country == my_country)])[[1]]
+   
+   plot_data <- plot_data %>% filter(year == my_year, variable == my_variable) %>%
+      mutate(col_ind = ifelse(Country == my_country, "country", "non"))
+   
+   ylims <- c(0, ceiling(max(plot_data$mean)/bin.width)*bin.width)
+   
+   plot_data <- plot_data %>% filter(sex == my_sex)
+   
+   plot.title <- switch(my_variable, 
+                        "prev_bmi_neg2sd" = "Thinness",
+                        "prev_bmi_2sd" = "Obesity",
+                        "prev_bmi_l185" = "Underweight",
+                        "prev_bmi_30" = "Obesity")
+   
+   
+   plot_data <- plot_data %>%
+      mutate(col_ind = ifelse(!(Country == my_country) & Region == my_region, "region", col_ind))
+   
+   plot_data$col_ind <- factor(plot_data$col_ind, 
+                               levels = c("country", "region", "non"))
+   
+   p <- ggplot(plot_data, aes(y = mean, fill = col_ind)) +
+      geom_histogram(binwidth = bin.width, center = centre) +
+      scale_fill_manual(values = c("country" = "blue", "region" = "grey30", "non" = "grey70"),
+                        labels = c(my_country, my_region, "Other")) + 
+      theme_classic() +
+      theme(panel.grid.major.x = element_blank(),
+            axis.line = element_blank(),
+            axis.text = element_text(size = 6),
+            axis.title = element_text(size = 7),
+            plot.title = element_text(size = 8, face = "bold")) +
+      scale_y_continuous(limits = ylims, expand = c(0,0)) +
+      scale_x_continuous(expand = c(0,0)) +
+      ggtitle(paste0("World")) +
+      xlab("Number of Countries") +
+      ylab("Prevalence (%)") +
+      theme(legend.position = "none")
+   
+   if(returnLeg){
+      # Assume option = Region not coded other possibility
+      p <- p + 
+         guides(fill=guide_legend(title="Legend")) +
+         theme(legend.background = element_rect(linetype = 2, size = 0.5, colour = "black"),
+               legend.position = "right",
+               legend.text=element_text(size= 8),
+               legend.title=element_text(size= 9),
+               legend.key.size = unit(6, "pt"))
+      
+      p <- cowplot::get_legend(p)
+   } else{
+      p <- p + theme(legend.position = "none")
+   }
+   
+   return(p)
+}
 
-make_mini_trends <- function(plot_data, my_country, my_sex,  age_type, plotLeg = F){
+make_mini_trends <- function(plot_data, my_country, my_sex,  age_type, returnLeg = F){
    #  Option takes "country" or "region"
    # "country" highlights country only
    # "region" highlights country and other countries in region
@@ -284,6 +378,9 @@ make_mini_trends <- function(plot_data, my_country, my_sex,  age_type, plotLeg =
       fillscale <- fill_scale_double_burden
    }
    
+   plot.title <- ifelse(age_type == "ado",
+                        ifelse(my_sex == "female", "Girls", "Boys"),
+                        ifelse(my_sex == "female", "Women", "Men"))
    
    p <- ggplot(plot_data, aes(x = year, y = mean, colour = variable)) +
       geom_hline(yintercept = 0, linetype = 'dashed', colour = grey(0.5)) +
@@ -291,22 +388,30 @@ make_mini_trends <- function(plot_data, my_country, my_sex,  age_type, plotLeg =
       geom_line() +
       theme_bw() +
       theme(axis.title.x = element_blank(),
-            axis.text=element_text(size=10.5),
-            # axis.text.x=element_text(size=10.5, angle = 45, hjust = 1),
+            axis.title.y = element_text(size = 8),
+            axis.text.y=element_text(size=8),
+            axis.text.x=element_text(size=8, angle = 45, hjust = 1),
             # legend.title=element_blank(),
             title = element_text(size = 10.5),
-            legend.text = element_text(size = 10.5),
+            legend.text = element_text(size = 8),
             strip.background = element_blank(),
             panel.grid.major.x = element_blank(),
             panel.grid.minor.x = element_blank(),
             panel.grid.major.y = element_line(colour = grey(0.95)),
             panel.grid.minor.y = element_blank()) +
-      scale_x_continuous(expand=c(0,0), limits = c(1989,2023), breaks = c(1990, 2000, 2010, 2020)) +
+      scale_x_continuous(expand=c(0,0), limits = c(1989,2023), breaks = c(1990, 2020)) +
       scale_y_continuous(expand=c(0,0), limits = ylims, breaks = breaks) +
       ggtitle(plot.title) +
       ylab("Prevalence (%)")+
       colscale +
       fillscale
+   
+   if(returnLeg){
+      p <- p + theme(legend.title = element_blank())
+      p <- get_legend(p)
+   } else{
+      p <- p + theme(legend.position = "none")
+   }
    
    return(p)
 }
@@ -348,9 +453,6 @@ get_change_text <- function(pp, change, l_change, u_change, uncertainty = T){
          change_text <- paste0('<span style="color:darkgreen">a decrease</span> of ', round(abs(change)), ' percentage points')
       }
       
-      
-      
-      
    } else if(pp <= 0.8){
       change_text <- "with no distinguishable change"
    }else {
@@ -365,8 +467,6 @@ get_change_text <- function(pp, change, l_change, u_change, uncertainty = T){
       } else{
          change_text <- paste0('<span style="color:red">an increase</span> of ', round(change), ' percentage points')
       }
-      
-      
       
    }
    
@@ -388,13 +488,6 @@ ordinal_suffix <- function(n) {
    
   return(paste0(n, suffix))
 }
-
-data_level
-data_change
-my_country
-my_variable
-age_type
-my_sex
 
 
 get_text_prevalences <- function(data_level, data_change, my_country, my_variable, age_type, my_sex){
@@ -427,13 +520,18 @@ get_text_prevalences <- function(data_level, data_change, my_country, my_variabl
       max(ranking_data$ranking_region[which(ranking_data$Region == my_region)]),
       " countries in ",
       my_region, 
-      " and " ,
+      "." 
+   )
+   
+   text3 <- paste0(
+      "• Ranked ",
       ranking_data$ranking_world[which(ranking_data$Country == my_country)], 
       "/200 countries in the world."
    )
    
    texttext <- arrangeGrob(gridtext::richtext_grob(text1, hjust=0, x = unit(0.02, "npc"), halign = 0,gp = gpar(col = "black", fontsize = 8)),
                            gridtext::richtext_grob(text2, hjust=0, x = unit(0.02, "npc"), halign = 0,gp = gpar(col = "black", fontsize = 8)),
+                           gridtext::richtext_grob(text3, hjust=0, x = unit(0.02, "npc"), halign = 0,gp = gpar(col = "black", fontsize = 8)),
                            ncol = 1)
    
    return(texttext)
