@@ -1,11 +1,5 @@
 library(ggbeeswarm)
 
-plot_data <- data_level
-rank_data <- data_ranking
-my_year = plot.end.year
-returnLeg = F
-rank_plot = T
-uncertainty = F
 
 make_region_rank_one_year <- function(plot_data, rank_data = NULL, my_country, my_sex, my_variable, my_year = plot.end.year, age_type, returnLeg = F, rank_plot = F){
    
@@ -16,8 +10,8 @@ make_region_rank_one_year <- function(plot_data, rank_data = NULL, my_country, m
       filter(Region == plot_region) %>%
       mutate(ranking = dense_rank(desc(mean))) %>%
       mutate(y = nrow(.) + 1 - ranking) %>%
-      mutate(x = 1.005) %>%
-      mutate(col_ind = ifelse(Country == my_country, "1"," 0"))
+      mutate(x = 0.9) %>%
+      mutate(col_ind = ifelse(Country == my_country, "country","region"))
    
    plot_data_ranking <- data_ranking %>% 
       filter(sex == my_sex, variable == my_variable, year == my_year) %>%
@@ -27,10 +21,11 @@ make_region_rank_one_year <- function(plot_data, rank_data = NULL, my_country, m
    plot_data <- merge(plot_data, plot_data_ranking) %>% 
       mutate(country_label = paste0(ifelse(ranking < 10, " ", ""), ranking, ". ", Country, " (", round(mean), "%)"))
    
-   col_scale <- scale_color_manual(values = c("1" = "blue", "0" = "black"))
+   col_scale <-  scale_colour_manual(values = c("country" = "#F0027F", "region" = "#386CB0", "non" = "#666666"),
+                                     labels = c("country" = "halp", "region" = plot_region, "non" = "Other countries"))
    
    p <- ggplot(plot_data, aes(x,y, colour = col_ind)) +
-      geom_text(data = plot_data %>% filter(x == 1.005), aes(label = country_label), hjust = 0, size = 2) +
+      geom_text(data = plot_data, aes(label = country_label), hjust = 0, size = 2) +
       ylab("") +
       xlab("") +
       col_scale +
@@ -49,14 +44,16 @@ make_region_rank_one_year <- function(plot_data, rank_data = NULL, my_country, m
          geom_point(data = plot_data,
                     shape = 21,
                     inherit.aes = F,
-                    aes(y = y, x = median_ranking/200, colour = col_ind)) +
+                    aes(y = y, x = median_ranking/(200/.8), colour = col_ind),
+                    size = 0.2) +
          geom_segment(data = plot_data, 
                       inherit.aes = F,
-                      aes(y = y, yend = y, x = l_ranking/200, xend = u_ranking/200, colour = col_ind)) +
+                      aes(y = y, yend = y, x = l_ranking/(200/.8), xend = u_ranking/(200/.8), colour = col_ind),
+                      linewidth = 0.1) +
          theme(axis.text.x = element_text(size = 6),
                axis.title.x = element_text(size = 7, hjust = 0)) +
-         xlab("Country ranking") +
-         scale_x_continuous(limits = c(0,2), breaks = c(0.005, 0.5, 1), labels = c(1,100, 200), position = "top") +
+         xlab("Global ranking           Regional ranking") +
+         scale_x_continuous(limits = c(0,2.1), breaks = c(0.005*.8, 0.5*.8, 1*.8), labels = c(1,100, 200), position = "top") +
          scale_y_continuous(limits = c(0.5, nrow(plot_data) + 0.5), expand = expansion(mult = c(0, 0))) 
    } else{
       p <- p + theme(axis.text.x = element_blank(),
@@ -71,7 +68,7 @@ make_region_rank_one_year <- function(plot_data, rank_data = NULL, my_country, m
       n_names <- nrow(plot_data)
       blank <- grid.rect(gp=gpar(col=NA, fill = NA))
       
-      p <- arrangeGrob(p, blank, ncol = 1, heights = c(3/20 + (n_names/20), (22-n_names)/20))
+      p <- arrangeGrob(p, blank, ncol = 1, heights = c(3/20 + (n_names/20), (20-n_names)/20))
    }
    
    return(p)
@@ -114,7 +111,7 @@ make_highlighted_histogram <- function(plot_data, my_country, my_sex, my_variabl
    
    p <- ggplot(plot_data, aes(x = rank, y = mean, fill = col_ind)) +
       geom_bar(stat = "identity") +
-      scale_fill_manual(values = c("country" = "blue", "region" = "grey30", "non" = "grey70"),
+      scale_fill_manual(values = c("country" = "#F0027F", "region" = "#386CB0", "non" = "#666666"),
                         labels = c("country" = "halp", "region" = my_region, "non" = "Other countries"),
                         limits = c("region", "non")) +
       new_scale_fill() +
@@ -122,7 +119,7 @@ make_highlighted_histogram <- function(plot_data, my_country, my_sex, my_variabl
                mapping = aes(x = rank, y = mean),
                inherit.aes = F,
                stat = "identity",
-               fill = "royalblue") +
+               fill = "#F0027F") +
       theme_classic() +
       theme(panel.grid.major.x = element_blank(),
             axis.line = element_blank(),
@@ -159,7 +156,7 @@ make_highlighted_histogram <- function(plot_data, my_country, my_sex, my_variabl
             force_pull   = 2, # do not pull toward data points
             nudge_y  = max(plot_data$mean)/2,
             nudge_x = nudge.x,
-            color = "blue", # Needed for Geom_text not label
+            color = "#F0027F", # Needed for Geom_text not label
             direction    = "both",
             segment.curvature = ifelse(subdata$rank >= 100, -1e-20,1e-20),
             segment.angle = ifelse(subdata$rank >= 100,-20,20),
@@ -223,10 +220,9 @@ make_beeswarm_plot <- function(plot_data, my_country, my_sex, my_variable, my_ye
       mutate(col_ind = ifelse(!(Country == my_country) & Region == my_region, "region", col_ind))
    
    
-   p <- ggplot(plot_data, aes(y = mean,  x = 1, colour = col_ind, alpha = 0.9), size = 0.1) +
-      geom_beeswarm(data = plot_data %>% filter(col_ind == "non")) +
-      geom_beeswarm(data = plot_data %>% filter(col_ind == "region")) +                
-      scale_colour_manual(values = c("country" = "blue", "region" = "grey30", "non" = "grey70"),
+   p <- ggplot(plot_data, aes(y = mean,  x = 1, colour = col_ind, alpha = 0.9)) +
+      geom_beeswarm(data = plot_data %>% filter(col_ind == "non" | col_ind == "region") , size = 0.7) +           
+      scale_colour_manual(values = c("country" = "#F0027F", "region" = "#386CB0", "non" = "#666666"),
                         labels = c("country" = "halp", "region" = my_region, "non" = "Other"),
                         limits = c("region", "non")) +
     new_scale_fill() +
@@ -235,7 +231,7 @@ make_beeswarm_plot <- function(plot_data, my_country, my_sex, my_variable, my_ye
             size = 1,
             inherit.aes = F,
             stat = "identity",
-            colour = "royalblue") +
+            colour = "#F0027F") +
       
    theme_classic() +
    theme(panel.grid.major.x = element_blank(),
@@ -317,7 +313,7 @@ make_bin_plot <- function(plot_data, my_country, my_sex, my_variable, my_year, a
    
    p <- ggplot(plot_data, aes(y = mean, fill = col_ind)) +
       geom_histogram(binwidth = bin.width, center = centre) +
-      scale_fill_manual(values = c("country" = "blue", "region" = "grey30", "non" = "grey70"),
+      scale_fill_manual(values = c("country" = "#F0027F", "region" = "#386CB0", "non" = "#666666"),
                         labels = c(my_country, my_region, "Other")) + 
       theme_classic() +
       theme(panel.grid.major.x = element_blank(),
