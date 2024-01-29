@@ -104,7 +104,7 @@ for(age_type in c("ado", "adult")){
          
          plot_hist_leg <- ifelse(my_variable == "prev_bmi_l185" & my_sex == "female", T, F)
          ps[[paste("histogram region", my_variable, my_country, my_sex, age_type)]] <- make_highlighted_histogram(data_level, my_country, my_sex, my_variable, my_year = plot.end.year, age_type, plotLeg = plot_hist_leg, option = "region")
-         ps[[paste("beeswarm", my_variable, my_country, my_sex, age_type)]]  <- make_beeswarm_plot(data_level, my_country, my_sex, my_variable, my_year = plot.end.year, age_type, plotLeg = F)
+         ps[[paste("beeswarm", my_variable, my_country, my_sex, age_type)]]  <- make_beeswarm_plot(data_level, my_country, my_sex, my_variable, my_year = plot.end.year, age_type, plotLeg = F, plot_uncertainty = F)
          ps[[paste("bin_plot", my_variable, my_country, my_sex, age_type)]] <- make_bin_plot(data_level, my_country, my_sex, my_variable, my_year = plot.end.year, age_type, returnLeg = F)
             
       }
@@ -117,7 +117,7 @@ for(age_type in c("ado", "adult")){
 
 ########################## PRINT PDF ###########################################
 blank <- grid.rect(gp=gpar(col=NA, fill = NA))
-suffix <- " bees"
+suffix <- " bees no uncertainty"
 cairo_pdf(paste0("NCD-RisC country factsheet Nigeria", suffix, ".pdf"), height = 11.7, width = 8.3, onefile=T) # Dimensions are those for A4
 
 #for(my_country in unique(countrylist$Country)[[1]]){

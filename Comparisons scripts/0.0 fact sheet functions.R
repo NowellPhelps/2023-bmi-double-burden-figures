@@ -194,8 +194,11 @@ make_highlighted_histogram <- function(plot_data, my_country, my_sex, my_variabl
    return(p)
 }
 
+# plot_data <- data_level
+# my_year <- plot.end.year
+# plotLeg = F
 
-make_beeswarm_plot <- function(plot_data, my_country, my_sex, my_variable, my_year, age_type, plotLeg = F){
+make_beeswarm_plot <- function(plot_data, my_country, my_sex, my_variable, my_year, age_type, plotLeg = F, plot_uncertainty = T){
    #  Option takes "country" or "region"
    # "country" highlights country only
    # "region" highlights country and other countries in region
@@ -219,7 +222,6 @@ make_beeswarm_plot <- function(plot_data, my_country, my_sex, my_variable, my_ye
    plot_data <- plot_data %>%
       mutate(col_ind = ifelse(!(Country == my_country) & Region == my_region, "region", col_ind))
    
-   
    p <- ggplot(plot_data, aes(y = mean,  x = 1, colour = col_ind, alpha = 0.9)) +
       geom_beeswarm(data = plot_data %>% filter(col_ind == "non" | col_ind == "region") , size = 0.7) +           
       scale_colour_manual(values = c("country" = "#F0027F", "region" = "#386CB0", "non" = "#666666"),
@@ -228,26 +230,69 @@ make_beeswarm_plot <- function(plot_data, my_country, my_sex, my_variable, my_ye
     new_scale_fill() +
     geom_beeswarm(data = plot_data %>% filter(Country == my_country),
             mapping = aes(y = mean, x = 1),
-            size = 1,
+            size = 0.2,
             inherit.aes = F,
             stat = "identity",
-            colour = "#F0027F") +
-      
-   theme_classic() +
-   theme(panel.grid.major.x = element_blank(),
-         axis.line = element_blank(),
-         axis.text.x = element_blank(),
-         axis.ticks.x = element_blank(),
-         axis.text.y = element_text(size = 6),
-         axis.title = element_text(size = 7),
-         plot.title = element_text(size = 8, face = "bold")) +
-   scale_y_continuous(limits = ylims, expand = c(0,0)) +
-   scale_x_continuous(expand = c(0,0)) +
-   ggtitle(paste0("World")) +
-   xlab("") +
-   ylab("Prevalence (%)") +
-   theme(legend.title = element_blank())
+            colour = "#F0027F") 
    
+   # Extract x values from beeswarm
+   test <- ggplot_build(p)
+   halp <- test$data
+   plot_data <- plot_data %>%
+      mutate(x = 1)
+   plot_data$x[which(!(plot_data$Country == my_country))] <- halp[[1]]$x
+   plot_data$x[which(plot_data$Country == my_country)] <- halp[[2]]$x
+   
+   p <- ggplot(plot_data, aes(y = mean,  x = x, colour = col_ind, alpha = 0.15)) +
+      geom_point(data = plot_data %>% filter(col_ind == "non" | col_ind == "region") ,
+                 size = 0.2, 
+                 shape = 21) +           
+      scale_colour_manual(values = c("country" = "#F0027F", "region" = "#386CB0", "non" = "#666666"),
+                          labels = c("country" = "halp", "region" = my_region, "non" = "Other"),
+                          limits = c("region", "non")) 
+   
+   if (plot_uncertainty){
+      p <- p +
+         geom_segment(data= plot_data %>% filter(col_ind == "non" | col_ind == "region"), 
+                      inherit.aes = F, 
+                      mapping = aes(y = l, yend = u,  x = x, xend = x, colour = col_ind, alpha = 0.15),
+                      linewidth = 0.1)
+   }
+   p <- p + 
+      new_scale_fill() +
+      geom_point(data = plot_data %>% filter(Country == my_country),
+                    mapping = aes(y = mean, x = 1),
+                    size = 0.2,
+                    inherit.aes = F,
+                    alpha = 0.8,
+                 shape = 21,
+                    stat = "identity",
+                    colour = "#F0027F")
+   
+   if(plot_uncertainty){
+      p <- p + geom_segment(data = plot_data %>% filter(Country == my_country), 
+                            inherit.aes = F, 
+                            colour = "#F0027F",
+                            mapping = aes(y = l, yend = u,  x = x, xend = x, colour = col_ind, alpha = 0.6),
+                            linewidth = 0.2, 
+                            alpha = 0.8)
+   }
+      
+   p <- p + 
+      theme_classic() +
+      theme(panel.grid.major.x = element_blank(),
+            axis.line = element_blank(),
+            axis.text.x = element_blank(),
+            axis.ticks.x = element_blank(),
+            axis.text.y = element_text(size = 6),
+            axis.title = element_text(size = 7),
+            plot.title = element_text(size = 8, face = "bold")) +
+      scale_y_continuous(limits = ylims, expand = c(0,0)) +
+      scale_x_continuous(expand = c(0,0)) +
+      ggtitle(paste0("World")) +
+      xlab("") +
+      ylab("Prevalence (%)") +
+      theme(legend.title = element_blank())
    
    if(plotLeg){
       # Assume option = Region not coded other possibility
