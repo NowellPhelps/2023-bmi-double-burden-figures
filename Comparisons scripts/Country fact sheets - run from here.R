@@ -241,7 +241,7 @@ for (my_country in c("Nigeria")){
       blank,
       arrangeGrob(
          textGrob("• Source: NCD Risk Factor Collaboration \"Worldwide trends in underweight and obesity from 1990 to 2022: a pooled analysis of 3663 population-representative", hjust=0, just = c("left"),x = unit(0.03, "npc"), gp = gpar(col = "black", fontsize = 7)),
-         richtext_grob('<span style="color:white">wwwl</span>studies with 222 million children, adolescents, and adults" *The Lancet*, 2024. For estimates for all 200 countries, together with a full list of input data sources, see ncdrisc.org.', hjust=0, x = unit(0.01, "npc"), gp = gpar(col = "black", fontsize = 7)),
+         richtext_grob('<span style="color:white">wwwl</span>studies with 222 million children, adolescents, and adults" *The Lancet*, 2024.', hjust=0, x = unit(0.01, "npc"), gp = gpar(col = "black", fontsize = 7)),
          textGrob('• For data and input data sources for all 200 countries see ncdrisc.org.', hjust=0, x = unit(0.03, "npc"),just = c("left"), gp = gpar(col = "black", fontsize = 7)),
          textGrob("• All prevalences presented here are age-standardised with the WHO Standard Population.", hjust=0, just = c("left"),x = unit(0.03, "npc"), gp = gpar(col = "black", fontsize = 7)),
          textGrob(paste0("• ",text_sources[[paste(my_country)]]), hjust=0, just = c("left"),x = unit(0.03, "npc"), gp = gpar(col = "black", fontsize = 7)),
