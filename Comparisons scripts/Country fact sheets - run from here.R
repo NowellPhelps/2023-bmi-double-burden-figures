@@ -25,6 +25,7 @@ library(plotly)
 library(htmlwidgets)
 library(htmltools)
 library(cowplot)
+library(magick)
 
 age_groups        <- c("ageStd")
 names(age_groups) <- c("20+ year olds")
@@ -60,6 +61,11 @@ data_ranking <- read_data_ranking(variables = c("prev_bmi_neg2sd", "prev_bmi_2sd
 
 remove(data_ranking_adult)
 
+data_numbers_adult <- read_data_numbers(variables = c("prev_bmi_l185", "prev_bmi_30"), sexes = c("female", "male"),region_level = "Country", age_level = "adult")
+data_numbers <- read_data_numbers(variables = c("prev_bmi_neg2sd", "prev_bmi_2sd"), sexes = c("female", "male"),region_level = "Country", age_level = "ado") %>%
+   rbind(., data_numbers_adult)
+rm(data_numbers_adult)
+
 data_sources_ado   <- read.csv("S:/Projects/HeightProject/Original dataset/Anthropometrics/adult_bmi_analysis/data_sources_summaries_and_overall/sources_summary_ado.csv") %>%
   select(-c(Country, Region, Superregion)) %>%
   left_join(., countrylist, by = c("iso"))
@@ -75,7 +81,7 @@ countrylist <- countrylist[order(countrylist$Country),]
 text_prevalences <- list()
 text_sources     <- list()
 
-for (my_country in c("Nigeria")){    
+for (my_country in c("Nigeria", "United Kingdom",  "Andorra", "Bermuda")){    
    print(my_country)
    
    text_sources[[paste(my_country)]] <- get_text_sources(my_country, data_sources_adult, data_sources_ado)
@@ -100,20 +106,22 @@ for (my_country in c("Nigeria")){
          
          for(my_variable in vars_of_interest){
             
-            text_prevalences[[paste(my_variable, my_country, age_type, my_sex)]] <- get_text_prevalences(data_level, data_change, my_country, my_variable, age_type, my_sex)
+            text_prevalences[[paste(my_variable, my_country, age_type, my_sex)]] <- get_text_prevalences(data_level, data_change, data_numbers, my_country, my_variable, age_type, my_sex)
             
             ps[[paste("region rank plot", my_variable, my_country, my_sex, age_type)]] <- make_region_rank_one_year(data_level, data_ranking, my_country, my_sex, my_variable, my_year = plot.end.year, age_type, returnLeg = F, rank_plot = T)
-            
          }
       }
-   
    }
    
    
+   ##### GET LEGENDS
+   ps[[paste("hist legend", my_country)]] <- make_bin_plot(data_level, my_country, my_sex, my_variable, my_year = plot.end.year, age_type, returnLeg = T)
+   
 }
 
-##### GET LEGENDS
-ps[[paste("hist legend")]] <- make_bin_plot(data_level, my_country, my_sex, my_variable, my_year = plot.end.year, age_type, returnLeg = T)
+## GET NCD-RisC logo
+logo_file <- "S:/Projects/HeightProject/Original dataset/Anthropometrics/adult_bmi_analysis/Figures scripts/Comparisons scripts/NCD-RisC-Logo.png"
+ps[["logo"]] <- cowplot::ggdraw() + draw_image(logo_file)
 
 for(age_type in c("ado", "adult")){
    ps[[paste("mintrend legend", age_type)]] <- make_mini_trends(data_level, my_country, my_sex, age_type, returnLeg = T)
@@ -121,135 +129,127 @@ for(age_type in c("ado", "adult")){
 
 ########################## PRINT PDF ###########################################
 blank <- grid.rect(gp=gpar(col=NA, fill = NA))
-suffix <- ""
-cairo_pdf(paste0("NCD-RisC country factsheet Nigeria", suffix, ".pdf"), height = 11.7, width = 8.3, onefile=T) # Dimensions are those for A4
 
-for (my_country in c("Nigeria")){   
-   plot.title <- paste0("Obesity and underweight in ",my_country, ", 2022")
+suffix <- ""
+for (my_country in c("Nigeria", "United Kingdom", "Andorra", "Bermuda")){  
+   
+   plot.title <- paste0("Underweight and obesity in ",my_country, ", 2022")
    
    region_length = nrow(countrylist %>% filter(Region == countrylist$Region[which(countrylist$Country == my_country)]))
    
+   
+   cairo_pdf(paste0("NCD-RisC country factsheet ", my_country, suffix, ".pdf"), height = 11.7, width = 8.3, onefile=T) # Dimensions are those for A4
+
+ 
    grid.arrange(
+      arrangeGrob(
+         textGrob(plot.title,hjust=0,just = c("left"),x = unit(0.005, "npc"),gp = gpar(col = "black", fontsize = 17)),
+         ps[["logo"]],
+         nrow = 1, 
+         widths = c(2, 1)
+      ),
       
-      textGrob(plot.title,hjust=0,just = c("left"),x = unit(0.005, "npc"),gp = gpar(col = "black", fontsize = 15)),
-      blank,
       
       arrangeGrob(
          arrangeGrob(
-            arrangeGrob(
-               arrangeGrob(richtext_grob(paste0("**Obesity in Women**"), hjust=0, x = unit(0.02, "npc"), gp = gpar(col = "black", fontsize = 10)),
-                           ps[[paste("region rank plot", "prev_bmi_30", my_country, "female", "adult")]],
-                           text_prevalences[[paste("prev_bmi_30", my_country, "adult", "female")]],
-                           blank,
-                           ncol = 1,
-                           heights = c(0.6, 8.7, 1, 1.5)),
-               
-               arrangeGrob(richtext_grob(paste0("**Obesity in Men**"), hjust=0, x = unit(0.02, "npc"), gp = gpar(col = "black", fontsize = 10)),
-                           ps[[paste("region rank plot", "prev_bmi_30", my_country, "male", "adult")]],
-                           text_prevalences[[paste("prev_bmi_30", my_country, "adult", "male")]],
-                           blank,
-                           ncol = 1,
-                           heights = c(0.5, 8.7, 1.5, 1)),
-               
-               nrow = 1, widths = c(1, 1)),
             
-            arrangeGrob(
-               arrangeGrob(richtext_grob(paste0("**Underweight in Women**"), hjust=0, x = unit(0.02, "npc"), gp = gpar(col = "black", fontsize = 10)),
+            
+            
+            
+            arrangeGrob(richtext_grob(paste0("**Underweight in Women**"), hjust=0, x = unit(0.02, "npc"), gp = gpar(col = "black", fontsize = 10)),
                            ps[[paste("region rank plot", "prev_bmi_l185", my_country, "female", "adult")]],
                            text_prevalences[[paste("prev_bmi_l185", my_country, "adult", "female")]],
                            blank,
                            ncol = 1,
-                           heights = c(0.5, 8.7, 1.5, 1)),
-               
-               arrangeGrob(richtext_grob(paste0("**Underweight in Men**"), hjust=0, x = unit(0.02, "npc"), gp = gpar(col = "black", fontsize = 10)),
-                           ps[[paste("region rank plot", "prev_bmi_l185", my_country, "male", "adult")]],
-                           text_prevalences[[paste("prev_bmi_l185", my_country, "adult", "male")]],
-                           blank,
-                           ncol = 1,
-                           heights = c(0.5, 8.7, 1.5, 1)),
-               
-               nrow = 1, widths = c(1, 1)),
+                        heights = c(0.6, 9, 1.4, 0.7)),
             
-            ncol = 1, 
+            arrangeGrob(richtext_grob(paste0("**Obesity in Women**"), hjust=0, x = unit(0.02, "npc"), gp = gpar(col = "black", fontsize = 10)),
+                        ps[[paste("region rank plot", "prev_bmi_30", my_country, "female", "adult")]],
+                        text_prevalences[[paste("prev_bmi_30", my_country, "adult", "female")]],
+                        blank,
+                        ncol = 1,
+                        heights = c(0.6, 9, 1.4, 0.7)),
             
-            heights = c(1,1)),
+            arrangeGrob(richtext_grob(paste0("**Underweight in Men**"), hjust=0, x = unit(0.02, "npc"), gp = gpar(col = "black", fontsize = 10)),
+                        ps[[paste("region rank plot", "prev_bmi_l185", my_country, "male", "adult")]],
+                        text_prevalences[[paste("prev_bmi_l185", my_country, "adult", "male")]],
+                        blank,
+                        ncol = 1,
+                        heights = c(0.6, 9, 1.4, 0.7)),
+            
+            arrangeGrob(richtext_grob(paste0("**Obesity in Men**"), hjust=0, x = unit(0.02, "npc"), gp = gpar(col = "black", fontsize = 10)),
+                        ps[[paste("region rank plot", "prev_bmi_30", my_country, "male", "adult")]],
+                        text_prevalences[[paste("prev_bmi_30", my_country, "adult", "male")]],
+                        blank,
+                        ncol = 1,
+                        heights = c(0.6, 9, 1.4, 0.7)),
+            
+            
+            arrangeGrob(richtext_grob(paste0("**Thinness in Girls**"), hjust=0, x = unit(0.02, "npc"), gp = gpar(col = "black", fontsize = 10)),
+                        ps[[paste("region rank plot", "prev_bmi_neg2sd", my_country, "female", "ado")]],
+                        text_prevalences[[paste("prev_bmi_neg2sd", my_country, "ado", "female")]],
+                        blank,
+                        ncol = 1,
+                        heights = c(0.6, 9, 1.4, 0.7)),
+            
+            arrangeGrob(richtext_grob(paste0("**Obesity in Girls**"), hjust=0, x = unit(0.02, "npc"), gp = gpar(col = "black", fontsize = 10)),
+                        ps[[paste("region rank plot", "prev_bmi_2sd", my_country, "female", "ado")]],
+                        text_prevalences[[paste("prev_bmi_2sd", my_country, "ado", "female")]],
+                        blank,
+                        ncol = 1,
+                        heights = c(0.6, 9, 1.4, 0.7)),
+            
+            arrangeGrob(richtext_grob(paste0("**Thinness in Boys**"), hjust=0, x = unit(0.02, "npc"), gp = gpar(col = "black", fontsize = 10)),
+                        ps[[paste("region rank plot", "prev_bmi_neg2sd", my_country, "male", "ado")]],
+                        text_prevalences[[paste("prev_bmi_neg2sd", my_country, "ado", "male")]],
+                        blank,
+                        ncol = 1,
+                        heights = c(0.6, 9, 1.4, 0.7)),
+            
+            arrangeGrob(richtext_grob(paste0("**Obesity in Boys**"), hjust=0, x = unit(0.02, "npc"), gp = gpar(col = "black", fontsize = 10)),
+                        ps[[paste("region rank plot", "prev_bmi_2sd", my_country, "male", "ado")]],
+                        text_prevalences[[paste("prev_bmi_2sd", my_country, "ado", "male")]],
+                        blank,
+                        ncol = 1,
+                        heights = c(0.6, 9, 1.4, 0.7)),
+            
+            nrow = 4, 
+            ncol = 2),
          
-         arrangeGrob(blank,
-                     blank,
-                     blank,
-                     ps[[paste("minitrend", my_country, "female", "adult")]],
-                     ps[[paste("mintrend legend", "adult")]],
-                     ps[[paste("minitrend", my_country, "male", "adult")]],
-                     blank,
-                     ncol = 1,
-                     heights = c(0.5,0.5,0.1,3,2,3,.3)),
-         nrow = 1,
-         widths = c(0.8, 0.2)),
-      blank,
-      
-      arrangeGrob(
          arrangeGrob(
-            arrangeGrob(
-               arrangeGrob(richtext_grob(paste0("**Obesity in Girls**"), hjust=0, x = unit(0.02, "npc"), gp = gpar(col = "black", fontsize = 10)),
-                           ps[[paste("region rank plot", "prev_bmi_2sd", my_country, "female", "ado")]],
-                           text_prevalences[[paste("prev_bmi_2sd", my_country, "ado", "female")]],
-                           blank,
-                           ncol = 1,
-                           heights = c(0.5, 8.7, 1.5, 1)),
-               
-               arrangeGrob(richtext_grob(paste0("**Obesity in Boys**"), hjust=0, x = unit(0.02, "npc"), gp = gpar(col = "black", fontsize = 10)),
-                           ps[[paste("region rank plot", "prev_bmi_2sd", my_country, "male", "ado")]],
-                           text_prevalences[[paste("prev_bmi_2sd", my_country, "ado", "male")]],
-                           blank,
-                           ncol = 1,
-                           heights = c(0.5, 8.7, 1.5, 1)),
-               
-               nrow = 1, widths = c(1, 1)),
-            
-            arrangeGrob(
-               arrangeGrob(richtext_grob(paste0("**Thinness in Girls**"), hjust=0, x = unit(0.02, "npc"), gp = gpar(col = "black", fontsize = 10)),
-                           ps[[paste("region rank plot", "prev_bmi_neg2sd", my_country, "female", "ado")]],
-                           text_prevalences[[paste("prev_bmi_neg2sd", my_country, "ado", "female")]],
-                           blank,
-                           ncol = 1,
-                           heights = c(0.5, 8.7, 1.5, 1)),
-               
-               arrangeGrob(richtext_grob(paste0("**Thinness in Boys**"), hjust=0, x = unit(0.02, "npc"), gp = gpar(col = "black", fontsize = 10)),
-                           ps[[paste("region rank plot", "prev_bmi_neg2sd", my_country, "male", "ado")]],
-                           text_prevalences[[paste("prev_bmi_neg2sd", my_country, "ado", "male")]],
-                           blank,
-                           ncol = 1,
-                           heights = c(0.5, 8.7, 1.5, 1)),
-               
-               nrow = 1, widths = c(1, 1)),
-            
-            ncol = 1, 
-            
-            heights = c(1,1)),
+            arrangeGrob(blank,
+                        ps[[paste("minitrend", my_country, "female", "adult")]],
+                        ps[[paste("mintrend legend", "adult")]],
+                        ps[[paste("minitrend", my_country, "male", "adult")]],
+                        blank,
+                        blank,
+                        blank,
+                        ps[[paste("minitrend", my_country, "female", "ado")]],
+                        ps[[paste("mintrend legend", "ado")]],
+                        ps[[paste("minitrend", my_country, "male", "ado")]],
+                        blank,
+                        ncol = 1, 
+                        heights = c(0.5,3,2,3,.1,2,.1,3,2,3,.5)),
+            blank,
+            nrow = 1,
+            widths = c(1,.05)),
          
-         arrangeGrob(blank,
-                     blank,
-                     blank,
-                     ps[[paste("minitrend", my_country, "female", "ado")]],
-                     ps[[paste("mintrend legend", "ado")]],
-                     ps[[paste("minitrend", my_country, "male", "ado")]],
-                     blank,
-                     ncol = 1,
-                     heights = c(0.5,0.5,0.1,3,2,3,.3)),
          nrow = 1,
          widths = c(0.8, 0.2)),
+      
       blank,
       arrangeGrob(
-         textGrob("• Source: NCD Risk Factor Collaboration \"Worldwide trends in underweight and obesity from 1990 to 2022: a pooled analysis of 3663 population-representative", hjust=0, just = c("left"),x = unit(0.03, "npc"), gp = gpar(col = "black", fontsize = 7)),
-         richtext_grob('<span style="color:white">wwwl</span>studies with 222 million children, adolescents, and adults" *The Lancet*, 2024.', hjust=0, x = unit(0.01, "npc"), gp = gpar(col = "black", fontsize = 7)),
-         textGrob('• For data and input data sources for all 200 countries see ncdrisc.org.', hjust=0, x = unit(0.03, "npc"),just = c("left"), gp = gpar(col = "black", fontsize = 7)),
-         textGrob("• All prevalences presented here are age-standardised with the WHO Standard Population.", hjust=0, just = c("left"),x = unit(0.03, "npc"), gp = gpar(col = "black", fontsize = 7)),
-         textGrob(paste0("• ",text_sources[[paste(my_country)]]), hjust=0, just = c("left"),x = unit(0.03, "npc"), gp = gpar(col = "black", fontsize = 7)),
-                  ncol = 1),
+         textGrob("• Source: NCD Risk Factor Collaboration \"Worldwide trends in underweight and obesity from 1990 to 2022: a pooled analysis of 3663 population-representative", hjust=0, just = c("left"),x = unit(0.01, "npc"), gp = gpar(col = "black", fontsize = 8)),
+         richtext_grob('<span style="color:white">ww</span>studies with 222 million children, adolescents, and adults" *The Lancet*, 2024.', hjust=0, x = unit(0, "npc"), gp = gpar(col = "black", fontsize = 8)),
+         textGrob(paste0("• ",text_sources[[paste(my_country)]]), hjust=0, just = c("left"),x = unit(0.01, "npc"), gp = gpar(col = "black", fontsize = 8)),
+         textGrob("• Prevalences presented here are age-standardised using the WHO Standard Population.", hjust=0, just = c("left"),x = unit(0.01, "npc"), gp = gpar(col = "black", fontsize = 8)),
+         textGrob('• Complete results (for 200 countries and territories) are available at www.ncdrisc.org.', hjust=0, x = unit(0.01, "npc"),just = c("left"), gp = gpar(col = "black", fontsize = 8)),
+         ncol = 1),
       
       ncol = 1,
-      heights = c(0.4,0.01, 6.07,0.1, 6.07, 0.05, 0.5)
+      heights = c(0.4, 6.07, 0.05, 0.5)
    )
+
+  dev.off()
 }
 
-dev.off()

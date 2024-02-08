@@ -40,13 +40,13 @@ library(scales)
 source(paste0(functionsDir,"0.1 Region Superregion palette.R"))
 source(paste0(functionsDir,"0.1 BMI Prevalence palette.R"))
 
-fill_scale_double_burden <- scale_fill_manual(values = c("Obesity" = "#EB0358", "Underweight" = "#00CED1", "Combined burden" = grey(0.2)))
+fill_scale_double_burden <- scale_fill_manual(values = c("Obesity" = "#EB0358", "Underweight" = "#00CED1", "Double burden" = grey(0.2)))
 
-fill_scale_double_burden_ado <- scale_fill_manual(values = c("Obesity" = "#EB0358", "Thinness" = "#00CED1", "Combined burden" = grey(0.2)))
+fill_scale_double_burden_ado <- scale_fill_manual(values = c("Obesity" = "#EB0358", "Thinness" = "#00CED1", "Double burden" = grey(0.2)))
 
-col_scale_double_burden <- scale_colour_manual(values = c("Obesity" = "#EB0358", "Underweight" = "#00CED1", "Combined burden" = grey(0.2)))
+col_scale_double_burden <- scale_colour_manual(values = c("Obesity" = "#EB0358", "Underweight" = "#00CED1", "Double burden" = grey(0.2)))
 
-col_scale_double_burden_ado <- scale_colour_manual(values = c("Obesity" = "#EB0358", "Thinness" = "#00CED1", "Combined burden" = grey(0.2)))
+col_scale_double_burden_ado <- scale_colour_manual(values = c("Obesity" = "#EB0358", "Thinness" = "#00CED1", "Double burden" = grey(0.2)))
 
 "#F2F2F2"
 # Specific fucntions for comparisons below:
@@ -104,7 +104,7 @@ read_data_level <- function(variables, sexes, age_type, region_level, age_level 
 }
 
 
-read_data_ranking <- function(variables, sexes, region_level = "Country", age_type = "ageStd", age_level = "adult"){
+read_data_numbers <- function(variables, sexes, region_level = "Country", age_level = "adult"){
    
    if(age_level == "adult"){
       indir_est <- indir_est_adult
@@ -114,6 +114,37 @@ read_data_ranking <- function(variables, sexes, region_level = "Country", age_ty
       modelnum  <- modelnum_ado
    }
    
+   data_numbers <- NULL
+   for (my_sex in sexes){
+      for (my_variable in variables){
+         data_numbers.tmp <- read.csv(paste0(indir_est,"Numbers/Model",modelnum,"_",my_sex,"_",my_variable, "_", region_level,"_numbers.csv")) %>%
+            mutate(sex = my_sex, variable = my_variable, region_level = region_level)
+         
+         data_numbers      <- rbind(data_numbers, data_numbers.tmp)
+      }
+   }
+   
+   rm(data_numbers.tmp)
+   
+   if(region_level == "Country"){
+      data_numbers <- data_numbers %>% 
+         left_join(countrylistold, by = "Country") %>%
+         select(-c(Country, Region, Superregion)) %>%
+         left_join(countrylist %>% filter(!(Country %in% c("Greenland","Bermuda","American Samoa","Tokelau"))), by = "iso") # NB these are the four countries for which we do not have population information
+   }
+   
+   return(data_numbers)
+}
+
+read_data_ranking <- function(variables, sexes, region_level = "Country", age_type = "ageStd", age_level = "adult"){
+   
+   if(age_level == "adult"){
+      indir_est <- indir_est_adult
+      modelnum  <- modelnum_adult
+   } else if(age_level == "ado"){
+      indir_est <- indir_est_ado
+      modelnum  <- modelnum_ado
+   }
    
    data_ranking <- NULL
    for (my_sex in sexes){
@@ -173,8 +204,6 @@ read_data_timechange <- function(variables, sexes, age_groups, age_type = "ageSt
   data_timechange <- data_timechange %>%
     select(-c(mean_absolute, l_absolute, u_absolute, se_absolute, PP.increase_absolute,
               mean_relative, l_relative, u_relative, se_relative, PP.increase_relative))
-
-
 
   if(region_level == "Country"){
     data_timechange <- data_timechange %>%

@@ -36,7 +36,7 @@ make_bin_plot <- function(plot_data, my_country, my_sex, my_variable, my_year, a
    
    p <- ggplot(plot_data, aes(y = mean, fill = col_ind)) +
       geom_histogram(binwidth = bin.width, center = centre) +
-      scale_fill_manual(values = c("country" = "#F0027F", "region" = "#386CB0", "non" = "#666666"),
+      scale_fill_manual(values = c("country" = "#F39200", "region" = "grey30", "non" = "#666666"),
                         labels = c(my_country, paste0("Other countries in\n", my_region), "Other"),
                         limits = c("country", "region")) + 
       theme_classic() +
@@ -52,15 +52,16 @@ make_bin_plot <- function(plot_data, my_country, my_sex, my_variable, my_year, a
       ylab("Prevalence (%)") +
       theme(legend.position = "none")
    
+   
    if(returnLeg){
       # Assume option = Region not coded other possibility
       p <- p + 
-         theme(legend.background = element_blank(),
+         guides(fill=guide_legend(title="Legend")) +
+         theme(legend.background = element_rect(linetype = 2, size = 0.5, colour = "black"),
                legend.position = "right",
-               legend.title=element_blank(),
                legend.text=element_text(size= 8),
-               legend.key.size = unit(6, "pt"),
-               legend.key.height = unit(6, 'pt'))
+               legend.title=element_text(size= 9),
+               legend.key.size = unit(6, "pt"))
       
       p <- cowplot::get_legend(p)
    } else{
@@ -83,7 +84,7 @@ make_mini_trends <- function(plot_data, my_country, my_sex,  age_type, returnLeg
          filter(variable %in% c("prev_double_burden_ado","prev_bmi_2sd", "prev_bmi_neg2sd"))
       
       plot_data$variable <- factor(plot_data$variable, levels = c("prev_double_burden_ado","prev_bmi_neg2sd","prev_bmi_2sd"))
-      levels(plot_data$variable) <- c('Combined burden','Thinness', 'Obesity')
+      levels(plot_data$variable) <- c('Double burden','Thinness', 'Obesity')
       colscale <- col_scale_double_burden_ado
       fillscale <- fill_scale_double_burden_ado
       
@@ -93,7 +94,7 @@ make_mini_trends <- function(plot_data, my_country, my_sex,  age_type, returnLeg
       plot_data <- plot_data %>% filter(Country == my_country & sex == my_sex  & year %in% seq(plot.start.year,plot.end.year)) %>% 
          arrange(rev(desc(variable))) %>% filter(variable %in% c("prev_double_burden","prev_bmi_l185", "prev_bmi_30"))
       plot_data$variable <- factor(plot_data$variable, levels = c("prev_double_burden","prev_bmi_l185","prev_bmi_30"))
-      levels(plot_data$variable) <-c('Combined burden','Underweight', 'Obesity')
+      levels(plot_data$variable) <-c('Double burden','Underweight', 'Obesity')
       colscale <- col_scale_double_burden
       fillscale <- fill_scale_double_burden
    }
@@ -111,9 +112,7 @@ make_mini_trends <- function(plot_data, my_country, my_sex,  age_type, returnLeg
             axis.title.y = element_text(size = 8),
             axis.text.y=element_text(size=8),
             axis.text.x=element_text(size=8, angle = 45, hjust = 1),
-            # legend.title=element_blank(),
             title = element_text(size = 10.5),
-            legend.text = element_text(size = 8),
             strip.background = element_blank(),
             panel.grid.major.x = element_blank(),
             panel.grid.minor.x = element_blank(),
@@ -127,7 +126,10 @@ make_mini_trends <- function(plot_data, my_country, my_sex,  age_type, returnLeg
       fillscale
    
    if(returnLeg){
-      p <- p + theme(legend.title = element_blank())
+      p <- p + 
+         theme(legend.title = element_blank(),
+               legend.key = unit(1,"cm"),
+               legend.text = element_text(size = 5))
       p <- get_legend(p)
    } else{
       p <- p + theme(legend.position = "none")
@@ -148,6 +150,14 @@ make_region_rank_one_year <- function(plot_data, rank_data = NULL, my_country, m
       mutate(x = 0.9) %>%
       mutate(col_ind = ifelse(Country == my_country, "country","region"))
    
+   n_names <- nrow(plot_data)
+   
+   if(n_names >= 12){
+      text_size = 2
+   } else {
+      text_size = 2.5
+   } 
+   
    plot_data_ranking <- data_ranking %>% 
       filter(sex == my_sex, variable == my_variable, year == my_year) %>%
       filter(Region == plot_region) %>%
@@ -156,11 +166,12 @@ make_region_rank_one_year <- function(plot_data, rank_data = NULL, my_country, m
    plot_data <- merge(plot_data, plot_data_ranking) %>% 
       mutate(country_label = paste0(ifelse(ranking < 10, " ", ""), ranking, ". ", Country, " (", round(mean), "%)"))
    
-   col_scale <-  scale_colour_manual(values = c("country" = "#F0027F", "region" = "#386CB0", "non" = "#666666"),
+   col_scale <-  scale_colour_manual(values = c("country" = "#F39200", "region" =  "grey30", "non" = "#666666"),
                                      labels = c("country" = "halp", "region" = plot_region, "non" = "Other countries"))
    
    p <- ggplot(plot_data, aes(x,y, colour = col_ind)) +
-      geom_text(data = plot_data, aes(label = country_label), hjust = 0, size = 2) +
+      geom_text(data = plot_data %>% filter(!(Country == my_country)), aes(label = country_label), hjust = 0, size = text_size) +
+      geom_text(data = plot_data %>% filter(Country == my_country), aes(label = country_label), hjust = 0, size = text_size,fontface="bold") +
       ylab("") +
       xlab("") +
       col_scale +
@@ -176,20 +187,25 @@ make_region_rank_one_year <- function(plot_data, rank_data = NULL, my_country, m
    
    if(rank_plot){
       p <- p +
+         geom_vline(xintercept = 1/(200/.8), colour = "grey80", linetype = "dashed", linewidth = 0.2) +
+         geom_vline(xintercept = 100/(200/.8), colour = "grey80", linetype = "dashed", linewidth = 0.2) +
+         geom_vline(xintercept = 200/(200/.8), colour = "grey80", linetype = "dashed", linewidth = 0.2) +
          geom_point(data = plot_data,
                     shape = 21,
                     inherit.aes = F,
                     aes(y = y, x = median_ranking/(200/.8), colour = col_ind),
-                    size = 0.2) +
+                    size = 0.3) +
          geom_segment(data = plot_data, 
                       inherit.aes = F,
                       aes(y = y, yend = y, x = l_ranking/(200/.8), xend = u_ranking/(200/.8), colour = col_ind),
-                      linewidth = 0.1) +
+                      linewidth = 0.2) +
          theme(axis.text.x = element_text(size = 6),
                axis.title.x = element_text(size = 7, hjust = 0)) +
-         xlab("Global ranking                            Regional ranking") +
-         scale_x_continuous(limits = c(0,2.1), breaks = c(0.005*.8, 0.5*.8, 1*.8), labels = c("1 \n(highest)",100, "200 \n(lowest)"), position = "top") +
-         scale_y_continuous(limits = c(0.5, nrow(plot_data) + 0.5), expand = expansion(mult = c(0, 0))) 
+         xlab(paste0("Global ranking                            ", plot_region)) +
+         scale_x_continuous(limits = c(-0.2,2.1), breaks = c(0.005*.8, 0.5*.8, 1*.8), labels = c("1\n(highest)","100\n", "200\n(lowest)"), position = "top") +
+         scale_y_continuous(limits = c(0.5, nrow(plot_data) + 0.5), expand = expansion(mult = c(0, 0))) +
+         theme(axis.text = element_text(hjust = 1))
+      
    } else{
       p <- p + theme(axis.text.x = element_blank(),
                      axis.title.x = element_blank())
@@ -200,10 +216,10 @@ make_region_rank_one_year <- function(plot_data, rank_data = NULL, my_country, m
    } else{
       p <- p + theme(legend.position = "none")
       
-      n_names <- nrow(plot_data)
+      
       blank <- grid.rect(gp=gpar(col=NA, fill = NA))
       
-      p <- arrangeGrob(p, blank, ncol = 1, heights = c(3/20 + (n_names/20), (20-n_names)/20))
+      #p <- arrangeGrob(p, blank, ncol = 1, heights = c(3/20 + (n_names/20), (20-n_names)/20))
    }
    
    return(p)
@@ -226,7 +242,7 @@ make_mini_trends <- function(plot_data, my_country, my_sex,  age_type, returnLeg
       plot_data$variable <- factor(plot_data$variable, 
                                    levels = c("prev_double_burden_ado","prev_bmi_neg2sd","prev_bmi_2sd"),
                                    labels = c('Double burden','Thinness', 'Obesity'))
-      levels(plot_data$variable) <- c('Combined burden','Thinness', 'Obesity')
+      levels(plot_data$variable) <- c('Double burden','Thinness', 'Obesity')
       colscale <- col_scale_double_burden_ado
       fillscale <- fill_scale_double_burden_ado
       
@@ -238,7 +254,7 @@ make_mini_trends <- function(plot_data, my_country, my_sex,  age_type, returnLeg
       plot_data$variable <- factor(plot_data$variable, 
                                    levels = c("prev_double_burden","prev_bmi_l185","prev_bmi_30"),
                                    labels = c('Double burden','Underweight', 'Obesity'))
-      levels(plot_data$variable) <- c('Combined burden','Underweight', 'Obesity')
+      levels(plot_data$variable) <- c('Double burden','Underweight', 'Obesity')
       colscale <- col_scale_double_burden
       fillscale <- fill_scale_double_burden
    }
@@ -289,11 +305,11 @@ get_text_sources <- function(my_country, data_sources_adult, data_sources_ado){
    n_sources_all_girls  <- data_sources_ado$N_all[which(data_sources_ado$sex == 2  & data_sources_ado$Country == my_country)]
    n_sources_all_boys  <- data_sources_ado$N_all[which(data_sources_ado$sex == 1  & data_sources_ado$Country == my_country)]
    
-   text <- paste0("Number of studies: ", n_sources_all_women, " for women, ", n_sources_all_men, " for men, ", n_sources_all_girls, " for girls, and ", n_sources_all_boys, " for boys.")
+   text <- paste0(my_country, " had ", n_sources_all_women, " ",ifelse(n_sources_all_women == 1, "study", "studies")," for women, ", n_sources_all_men, " for men, ", n_sources_all_girls, " for girls, and ", n_sources_all_boys, " for boys.")
    
-   if (min(c(n_sources_all_women,n_sources_all_men,n_sources_all_girls,n_sources_all_boys) < 1)){
-      text2 <- "If there are 0 studies, estimates are inferred by overall global data based on proximity"
-      text <- paste(text, text2)
+   if (min(c(n_sources_all_women,n_sources_all_men,n_sources_all_girls,n_sources_all_boys)) < 1){
+      text2 <- paste0("Results are inferred from overall \n  global data based on proximity to ", my_country, " for age-sex groups with no studies.")
+      text  <- paste(text, text2)
    }
    
    return(text)
@@ -351,7 +367,7 @@ ordinal_suffix <- function(n) {
   return(paste0(n, suffix))
 }
 
-get_text_prevalences <- function(data_level, data_change, my_country, my_variable, age_type, my_sex){
+get_text_prevalences <- function(data_level, data_change, data_numbers, my_country, my_variable, age_type, my_sex){
 
    my_region <- unique(data_level$Region[which(data_level$Country == my_country)])[[1]]
    
@@ -366,22 +382,57 @@ get_text_prevalences <- function(data_level, data_change, my_country, my_variabl
       mutate(ranking_region = rank(-mean)) %>%
       ungroup()
    
+   group_name <- ifelse(age_type == "adult",
+                        ifelse(my_sex == "male", "men", "women"),
+                        ifelse(my_sex == "male", "boys", "girls"))
+   
+   
+   var.name<- switch(my_variable, 
+                        "prev_bmi_neg2sd" = "thinness",
+                        "prev_bmi_2sd" = "obesity",
+                        "prev_bmi_l185" = "underweight",
+                        "prev_bmi_30" = "obesity")
    
    text1 <- paste0(
       "• ",
       round(data_country$mean),
-      "% in 2022, ",
-      get_change_text(data_change_country$PP.increase, data_change_country$mean, data_change_country$l, data_change_country$u, uncertainty = F),
-      " from 1990. ")
+      "% prevalence, ",
+      get_change_text(data_change_country$PP.increase, data_change_country$mean, data_change_country$l, data_change_country$u, uncertainty = F))
    
-   text2 <- paste0(
-      "• XX million XXX with XXX." 
-   )
+   text2 <- "   from 1990."
    
+  numbers_exist <- !(my_country %in% c("Greenland","Bermuda","American Samoa","Tokelau"))
+ 
+  if(numbers_exist){
+     
+     number_country <- data_numbers %>% 
+        filter(Country == my_country, variable == my_variable, sex == my_sex, year == plot.end.year)
+     number_country <- number_country$mean
+     
+     if(number_country > 10^6){
+        number_country <- paste0(signif(number_country/10^6, 2), " million")
+     } else {
+        number_country <- format(signif(number_country, 2), big.mark = ",", trim = TRUE)
+     }
+     
+     text3 <- paste0("• ", number_country, " ", group_name, " with ", var.name, ".")
+  } else{
+     text3 <- " "
+  }
    
-   texttext <- arrangeGrob(gridtext::richtext_grob(text1, hjust=0, x = unit(0.02, "npc"), halign = 0,gp = gpar(col = "black", fontsize = 8)),
-                           gridtext::richtext_grob(text2, hjust=0, x = unit(0.02, "npc"), halign = 0,gp = gpar(col = "black", fontsize = 8)),
-                           ncol = 1)
+  if(numbers_exist){
+     texttext <- arrangeGrob(textGrob(text3, hjust=0, x = unit(0.02, "npc"),gp = gpar(col = "black", fontsize = 8)),
+                             gridtext::richtext_grob(text1, hjust=0, x = unit(0.02, "npc"), halign = 0,gp = gpar(col = "black", fontsize = 8)),
+                             textGrob(text2, hjust=0, x = unit(0.02, "npc"), gp = gpar(col = "black", fontsize = 8)),
+                             
+                             ncol = 1)
+  } else{
+     texttext <- arrangeGrob(gridtext::richtext_grob(text1, hjust=0, x = unit(0.02, "npc"), halign = 0,gp = gpar(col = "black", fontsize = 8)),
+                             textGrob(text2, hjust=0, x = unit(0.02, "npc"), gp = gpar(col = "black", fontsize = 8)), 
+                             gridtext::richtext_grob(text3, hjust=0, x = unit(0.02, "npc"), halign = 0,gp = gpar(col = "black", fontsize = 8)),
+                             ncol = 1)
+  }
+   
    
    return(texttext)
 }
