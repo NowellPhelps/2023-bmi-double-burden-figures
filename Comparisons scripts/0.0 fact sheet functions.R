@@ -144,8 +144,9 @@ make_region_rank_one_year <- function(plot_data, rank_data = NULL, my_country, m
    
    plot_data <- plot_data %>% 
       filter(sex == my_sex, variable == my_variable, year == my_year) %>%
+      mutate(ranking_global = rank(desc(mean))) %>%
       filter(Region == plot_region) %>%
-      mutate(ranking = dense_rank(desc(mean))) %>%
+      mutate(ranking = rank(desc(mean))) %>%
       mutate(y = nrow(.) + 1 - ranking) %>%
       mutate(x = 0.9) %>%
       mutate(col_ind = ifelse(Country == my_country, "country","region"))
@@ -191,17 +192,16 @@ make_region_rank_one_year <- function(plot_data, rank_data = NULL, my_country, m
          geom_vline(xintercept = 100/(200/.8), colour = "grey80", linetype = "dashed", linewidth = 0.2) +
          geom_vline(xintercept = 200/(200/.8), colour = "grey80", linetype = "dashed", linewidth = 0.2) +
          geom_point(data = plot_data,
-                    shape = 21,
                     inherit.aes = F,
-                    aes(y = y, x = median_ranking/(200/.8), colour = col_ind),
-                    size = 0.3) +
+                    aes(y = y, x = ranking_global/(200/.8), colour = col_ind),
+                    size = 0.8) +
          geom_segment(data = plot_data, 
                       inherit.aes = F,
                       aes(y = y, yend = y, x = l_ranking/(200/.8), xend = u_ranking/(200/.8), colour = col_ind),
-                      linewidth = 0.2) +
+                      linewidth = 0.3) +
          theme(axis.text.x = element_text(size = 6),
                axis.title.x = element_text(size = 7, hjust = 0)) +
-         xlab(paste0("Global ranking                            ", plot_region)) +
+         xlab(paste0("Global ranking                               ", plot_region)) +
          scale_x_continuous(limits = c(-0.2,2.1), breaks = c(0.005*.8, 0.5*.8, 1*.8), labels = c("1\n(highest)","100\n", "200\n(lowest)"), position = "top") +
          scale_y_continuous(limits = c(0.5, nrow(plot_data) + 0.5), expand = expansion(mult = c(0, 0))) +
          theme(axis.text = element_text(hjust = 1))
@@ -219,7 +219,6 @@ make_region_rank_one_year <- function(plot_data, rank_data = NULL, my_country, m
       
       blank <- grid.rect(gp=gpar(col=NA, fill = NA))
       
-      #p <- arrangeGrob(p, blank, ncol = 1, heights = c(3/20 + (n_names/20), (20-n_names)/20))
    }
    
    return(p)
@@ -272,7 +271,6 @@ make_mini_trends <- function(plot_data, my_country, my_sex,  age_type, returnLeg
             axis.title.y = element_text(size = 8),
             axis.text.y=element_text(size=8),
             axis.text.x=element_text(size=8, angle = 45, hjust = 1),
-            # legend.title=element_blank(),
             title = element_text(size = 10.5),
             legend.text = element_text(size = 8),
             strip.background = element_blank(),
@@ -328,7 +326,7 @@ get_change_text <- function(pp, change, l_change, u_change, uncertainty = T){
             
          }
       } else{
-         change_text <- paste0('<span style="color:darkgreen">a decrease</span> of ', round(abs(change)), ' percentage points')
+         change_text <- paste0('<span style="color:darkgreen">a decrease</span> of ', round(abs(change)), ifelse(round(abs(change)) == 1, ' percentage point', ' percentage points'))
       }
       
    } else if(pp <= 0.8){
@@ -343,7 +341,7 @@ get_change_text <- function(pp, change, l_change, u_change, uncertainty = T){
             
          }
       } else{
-         change_text <- paste0('<span style="color:red">an increase</span> of ', round(change), ' percentage points')
+         change_text <- paste0('<span style="color:red">an increase</span> of ', round(change),  ifelse(round(change) == 1, ' percentage point', ' percentage points'))
       }
       
    }
@@ -411,8 +409,8 @@ get_text_prevalences <- function(data_level, data_change, data_numbers, my_count
      
      if(number_country > 10^6){
         number_country <- paste0(signif(number_country/10^6, 2), " million")
-     } else {
-        number_country <- format(signif(number_country, 2), big.mark = ",", trim = TRUE)
+      } else {
+        number_country <- format(signif(number_country, 2), big.mark = ",", trim = TRUE, scientific = F)
      }
      
      text3 <- paste0("• ", number_country, " ", group_name, " with ", var.name, ".")

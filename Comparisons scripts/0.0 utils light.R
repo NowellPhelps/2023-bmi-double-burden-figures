@@ -78,7 +78,6 @@ read_data_level <- function(variables, sexes, age_type, region_level, age_level 
     modelnum  <- modelnum_ado
   }
 
-
   data_level <- NULL
   for (my_sex in sexes){
     for (my_variable in variables){
@@ -94,15 +93,15 @@ read_data_level <- function(variables, sexes, age_type, region_level, age_level 
 
   if(region_level == "Country"){
     data_level <- data_level %>%
-      dplyr::rename(Country = country) %>%
-      left_join(countrylistold, by = "Country") %>%
-      select(-c(Country, Region, Superregion)) %>%
-      left_join(countrylist, by = "iso")
+       dplyr::rename(Country = country) %>%
+       mutate(Country = ifelse(Country == "Occupied Palestinian Territory", "State of Palestine", Country)) %>%
+       left_join(countrylistold, by = "Country") 
   }
 
   return(data_level)
 }
 
+variables = c("prev_bmi_l185", "prev_bmi_30");sexes = c("female", "male");region_level = "Country";age_level = "adult"
 
 read_data_numbers <- function(variables, sexes, region_level = "Country", age_level = "adult"){
    
@@ -125,16 +124,16 @@ read_data_numbers <- function(variables, sexes, region_level = "Country", age_le
    }
    
    rm(data_numbers.tmp)
-   
+
    if(region_level == "Country"){
-      data_numbers <- data_numbers %>% 
-         left_join(countrylistold, by = "Country") %>%
-         select(-c(Country, Region, Superregion)) %>%
-         left_join(countrylist %>% filter(!(Country %in% c("Greenland","Bermuda","American Samoa","Tokelau"))), by = "iso") # NB these are the four countries for which we do not have population information
+      data_numbers <- data_numbers %>%
+         mutate(Country = ifelse(Country == "Occupied Palestinian Territory", "State of Palestine", Country)) %>%
+         left_join(countrylistold %>% filter(!(Country %in% c("Greenland","Bermuda","American Samoa","Tokelau"))), by = "Country") # NB these are the four countries for which we do not have population information
    }
    
    return(data_numbers)
 }
+
 
 read_data_ranking <- function(variables, sexes, region_level = "Country", age_type = "ageStd", age_level = "adult"){
    
@@ -156,12 +155,11 @@ read_data_ranking <- function(variables, sexes, region_level = "Country", age_ty
       }
    }
    rm(data_ranking.tmp)
-   
+
    if(region_level == "Country"){
       data_ranking <- data_ranking %>%
-         left_join(countrylistold, by = "Country") %>%
-         select(-c(Country, Region, Superregion)) %>%
-         left_join(countrylist, by = "iso")
+         mutate(Country = ifelse(Country == "Occupied Palestinian Territory", "State of Palestine", Country)) %>%
+         left_join(countrylistold, by = "Country")
    }
    
    return(data_ranking)
@@ -204,13 +202,12 @@ read_data_timechange <- function(variables, sexes, age_groups, age_type = "ageSt
   data_timechange <- data_timechange %>%
     select(-c(mean_absolute, l_absolute, u_absolute, se_absolute, PP.increase_absolute,
               mean_relative, l_relative, u_relative, se_relative, PP.increase_relative))
-
+#
   if(region_level == "Country"){
     data_timechange <- data_timechange %>%
       dplyr::rename(Country = country) %>%
-      left_join(countrylistold, by = "Country") %>%
-      select(-c(Country, Region, Superregion)) %>%
-      left_join(countrylist, by = "iso")
+       mutate(Country = ifelse(Country == "Occupied Palestinian Territory", "State of Palestine", Country)) %>%
+       left_join(countrylistold, by = "Country")
   }
   return(data_timechange)
 }
@@ -228,5 +225,5 @@ read_countrylist <- function(country.list.name.tmp, type){
 
 countrylist    <- read_countrylist(country.list.name, type = "new")
 countrylistold <- read_countrylist(country.list.old.name, type = "old")
-countrylistold$Country[grepl('Palest', countrylistold$Country)] <- 'Occupied Palestinian Territory'
+countrylistold$Country[grepl('Palest', countrylistold$Country)] <- 'State of Palestine'
 

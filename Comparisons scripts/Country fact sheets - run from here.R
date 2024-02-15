@@ -9,9 +9,10 @@ appendix <- T
 
 figsuffix      <- ""
 figsuffix      <- ifelse(figsuffix == "", "", paste0(" ", figsuffix))
-outdir_folder  <- paste0("")
-figNum         <- 25
+outdir_folder  <- paste0("S:/Projects/HeightProject/Papers/Anthropometrics/Adult & Adolescent BMI (double burden) 2023/Country factsheets/test package/")
 
+outdir_folder <- "S:/Projects/HeightProject/Original dataset/Anthropometrics/adult_bmi_analysis/Figures scripts/Comparisons scripts/Factsheets/"
+   
 library(tidyverse)
 library(ggnewscale)
 library(reshape)
@@ -30,6 +31,9 @@ library(magick)
 age_groups        <- c("ageStd")
 names(age_groups) <- c("20+ year olds")
 my_age_group      <- "ageStd"
+
+countrylist_corrected <- countrylistold %>%
+   mutate(Country = ifelse(Country == "Occupied Palestinian Territory", "State of Palestine", Country))
 
 ############################# READ DATA ########################################
 data_level_adult <- read_data_level(variables = c("prev_bmi_l185", "prev_bmi_30", "prev_double_burden"), sexes = c("female", "male"), age_type = "ageStd", region_level = "Country", age_level = "adult") %>%
@@ -68,24 +72,34 @@ rm(data_numbers_adult)
 
 data_sources_ado   <- read.csv("S:/Projects/HeightProject/Original dataset/Anthropometrics/adult_bmi_analysis/data_sources_summaries_and_overall/sources_summary_ado.csv") %>%
   select(-c(Country, Region, Superregion)) %>%
-  left_join(., countrylist, by = c("iso"))
+  left_join(., countrylist_corrected, by = c("iso"))
 data_sources_adult <- read.csv("S:/Projects/HeightProject/Original dataset/Anthropometrics/adult_bmi_analysis/data_sources_summaries_and_overall/sources_summary_adult.csv") %>%
   select(-c(Country, Region, Superregion)) %>%
-  left_join(., countrylist, by = c("iso"))
+  left_join(., countrylist_corrected, by = c("iso"))
 
 ############################# GENERATE PLOTS ####################################
 ps <- list()
 
-countrylist <- countrylist[order(countrylist$Country),]
+countrylist <- countrylist_corrected[order(countrylist_corrected$Country),]
 
 text_prevalences <- list()
 text_sources     <- list()
 
-for (my_country in c("Nigeria", "United Kingdom",  "Andorra", "Bermuda")){    
+my_countries <- countrylist$Country
+
+### GET ONE COUNTRY FROM EACH REGION FOR TESTING
+my_countries <- countrylist %>%
+   group_by(Region) %>%
+   filter(row_number() ==1) %>%
+   ungroup()
+
+my_countries <- my_countries$Country
+my_countries <- c("Nigeria", "United Kingdom")
+
+for (my_country in my_countries){    
    print(my_country)
    
    text_sources[[paste(my_country)]] <- get_text_sources(my_country, data_sources_adult, data_sources_ado)
-   
    
    for(age_type in c("ado", "adult")){
       
@@ -131,14 +145,14 @@ for(age_type in c("ado", "adult")){
 blank <- grid.rect(gp=gpar(col=NA, fill = NA))
 
 suffix <- ""
-for (my_country in c("Nigeria", "United Kingdom", "Andorra", "Bermuda")){  
+for (my_country in my_countries){  
    
    plot.title <- paste0("Underweight and obesity in ",my_country, ", 2022")
    
    region_length = nrow(countrylist %>% filter(Region == countrylist$Region[which(countrylist$Country == my_country)]))
    
    
-   cairo_pdf(paste0("NCD-RisC country factsheet ", my_country, suffix, ".pdf"), height = 11.7, width = 8.3, onefile=T) # Dimensions are those for A4
+   cairo_pdf(paste0(outdir_folder, "NCD-RisC country factsheet ", my_country, suffix, ".pdf"), height = 11.7, width = 8.3, onefile=T) # Dimensions are those for A4
 
  
    grid.arrange(
@@ -152,10 +166,6 @@ for (my_country in c("Nigeria", "United Kingdom", "Andorra", "Bermuda")){
       
       arrangeGrob(
          arrangeGrob(
-            
-            
-            
-            
             arrangeGrob(richtext_grob(paste0("**Underweight in Women**"), hjust=0, x = unit(0.02, "npc"), gp = gpar(col = "black", fontsize = 10)),
                            ps[[paste("region rank plot", "prev_bmi_l185", my_country, "female", "adult")]],
                            text_prevalences[[paste("prev_bmi_l185", my_country, "adult", "female")]],
