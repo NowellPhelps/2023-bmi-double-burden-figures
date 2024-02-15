@@ -313,43 +313,6 @@ get_text_sources <- function(my_country, data_sources_adult, data_sources_ado){
    return(text)
 }
 
-get_change_text <- function(pp, change, l_change, u_change, uncertainty = T){
-   
-   if(pp < 0.2){
-      
-      if (uncertainty){
-         if (round(u_change) > 0){
-            change_text <- paste0('<span style="color:darkgreen">a decrease</span> of ', round(abs(change)), ' (', -round(u_change),' to ',round(abs(l_change)),') percentage points')
-            
-         } else{
-            change_text <- paste0('<span style="color:darkgreen">a decrease</span> of ', round(abs(change)), ' (', round(abs(u_change)),'-',round(abs(l_change)),') percentage points')
-            
-         }
-      } else{
-         change_text <- paste0('<span style="color:darkgreen">a decrease</span> of ', round(abs(change)), ifelse(round(abs(change)) == 1, ' percentage point', ' percentage points'))
-      }
-      
-   } else if(pp <= 0.8){
-      change_text <- "with no detectable change"
-   } else {
-      
-      if(uncertainty){
-         if (round(l_change) < 0){
-            change_text <- paste0('<span style="color:red">an increase</span> of ', round(change), ' (',round(l_change),' to ',round(u_change),') percentage points')
-         } else{
-            change_text <- paste0('<span style="color:red">an increase</span> of ', round(change), ' (',round(l_change),'-',round(u_change),') percentage points ')
-            
-         }
-      } else{
-         change_text <- paste0('<span style="color:red">an increase</span> of ', round(change),  ifelse(round(change) == 1, ' percentage point', ' percentage points'))
-      }
-      
-   }
-   
-   return(change_text)
-}
-
-
 ordinal_suffix <- function(n) {
    if (n %% 100 %in% c(11, 12, 13)) {
       suffix <- "th"
@@ -391,11 +354,25 @@ get_text_prevalences <- function(data_level, data_change, data_numbers, my_count
                         "prev_bmi_l185" = "underweight",
                         "prev_bmi_30" = "obesity")
    
+   ## get offset number of sf rounding:
+   prev_val   <- format(round(data_country$mean,1), nsmall = 1)
+   change_val <- format(round(abs(data_change_country$mean),1), nsmall = 1)
+   
+   if(data_change_country$PP.increase < 0.2){
+      change_text <- paste0('<span style="color:darkgreen">a decrease</span> of ', change_val, ' percentage points')
+      
+   } else if(data_change_country$PP.increase <= 0.8){
+      change_text <- "with no detectable change"
+      
+   } else {
+      change_text <- paste0('<span style="color:red">an increase</span> of ', change_val,  ' percentage points')
+   }
+   
    text1 <- paste0(
       "• ",
-      round(data_country$mean),
+      prev_val,
       "% prevalence, ",
-      get_change_text(data_change_country$PP.increase, data_change_country$mean, data_change_country$l, data_change_country$u, uncertainty = F))
+      change_text)
    
    text2 <- "   from 1990."
    
