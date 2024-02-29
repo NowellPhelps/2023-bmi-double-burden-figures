@@ -10,7 +10,8 @@ appendix <- T
 figsuffix      <- ""
 figsuffix      <- ifelse(figsuffix == "", "", paste0(" ", figsuffix))
 outdir_folder  <- paste0("S:/Projects/HeightProject/Papers/Anthropometrics/Adult & Adolescent BMI (double burden) 2023/Country factsheets/test package/")
-outdir_folder <- "S:/Projects/HeightProject/Original dataset/Anthropometrics/adult_bmi_analysis/Figures scripts/Comparisons scripts/Factsheets margins adjusted/"
+outdir_folder  <- "S:/Projects/HeightProject/Original dataset/Anthropometrics/adult_bmi_analysis/Figures scripts/Comparisons scripts/Factsheets margins re-adjusted - Bin Changes/"
+dir.create(outdir_folder)
 
 library(tidyverse)
 library(ggnewscale)
@@ -36,12 +37,12 @@ countrylist_corrected <- countrylistold %>%
 
 ############################# READ DATA ########################################
 data_level_adult <- read_data_level(variables = c("prev_bmi_l185", "prev_bmi_30", "prev_double_burden"), sexes = c("female", "male"), age_type = "ageStd", region_level = "Country", age_level = "adult") %>%
-  filter(age_group == "ageStd")
+   filter(age_group == "ageStd")
 
 data_level <- read_data_level(variables = c("prev_bmi_neg2sd", "prev_bmi_2sd", "prev_double_burden"), sexes = c("female", "male"), age_type = "ageStd", region_level = "Country", age_level = "ado") %>%
-  mutate(variable = ifelse(variable == 'prev_double_burden', 'prev_double_burden_ado', variable)) %>%
-  filter(age_group == "ageStd") %>%
-  rbind(., data_level_adult)
+   mutate(variable = ifelse(variable == 'prev_double_burden', 'prev_double_burden_ado', variable)) %>%
+   filter(age_group == "ageStd") %>%
+   rbind(., data_level_adult)
 
 rm(data_level_adult)
 
@@ -70,11 +71,11 @@ data_numbers <- read_data_numbers(variables = c("prev_bmi_neg2sd", "prev_bmi_2sd
 rm(data_numbers_adult)
 
 data_sources_ado   <- read.csv("S:/Projects/HeightProject/Original dataset/Anthropometrics/adult_bmi_analysis/data_sources_summaries_and_overall/sources_summary_ado.csv") %>%
-  select(-c(Country, Region, Superregion)) %>%
-  left_join(., countrylist_corrected, by = c("iso"))
+   select(-c(Country, Region, Superregion)) %>%
+   left_join(., countrylist_corrected, by = c("iso"))
 data_sources_adult <- read.csv("S:/Projects/HeightProject/Original dataset/Anthropometrics/adult_bmi_analysis/data_sources_summaries_and_overall/sources_summary_adult.csv") %>%
-  select(-c(Country, Region, Superregion)) %>%
-  left_join(., countrylist_corrected, by = c("iso"))
+   select(-c(Country, Region, Superregion)) %>%
+   left_join(., countrylist_corrected, by = c("iso"))
 
 ############################# GENERATE PLOTS ####################################
 ps <- list()
@@ -93,15 +94,15 @@ my_countries <- countrylist$Country
 #    ungroup()
 # 
 # my_countries <- my_countries$Country
-
+# 
 # my_countries <- c("Nigeria", "United Kingdom")
 # 
 # my_countries <- c("Palau")
 # my_countries <- c("Mauritius")
+# 
+# my_countries <- c("Saint Vincent and the Grenadines")
 
-#my_countries <- c("Saint Vincent and the Grenadines")
-
-for (my_country in my_countries){    
+for (my_country in my_countries){
    print(my_country)
    
    text_sources[[paste(my_country)]] <- get_text_sources(my_country, data_sources_adult, data_sources_ado)
@@ -145,7 +146,7 @@ for(age_type in c("ado", "adult")){
 blank <- grid.rect(gp=gpar(col=NA, fill = NA))
 
 suffix <- ""
-for (my_country in my_countries){  
+for (my_country in my_countries){
    
    title.font.size <- ifelse(my_country %in% c("Saint Vincent and the Grenadines", "Federated States of Micronesia"), 14, 16)
    
@@ -156,14 +157,14 @@ for (my_country in my_countries){
    print(paste0("printing factsheet: ", my_country))
    
    cairo_pdf(paste0(outdir_folder, "NCD-RisC country factsheet ", my_country, suffix, ".pdf"), height = 11.7, width = 8.3, onefile=T) # Dimensions are those for A4
-
- 
+   
+   
    grid.arrange(
       arrangeGrob(blank,
                   arrangeGrob(arrangeGrob(
                      textGrob(plot.title,hjust=0,just = c("left"),x = unit(0.005, "npc"),gp = gpar(col = "black", fontsize = title.font.size)),
                      ps[["logo"]],
-                     nrow = 1, 
+                     nrow = 1,
                      widths = c(2.1, .9)
                   ),
                   
@@ -227,7 +228,7 @@ for (my_country in my_countries){
                                     ncol = 1,
                                     heights = c(0.6, 9, 1.5, 0.6)),
                         
-                        nrow = 4, 
+                        nrow = 4,
                         ncol = 2),
                      
                      arrangeGrob(
@@ -249,7 +250,7 @@ for (my_country in my_countries){
                         widths = c(.98,.04)),
                      
                      nrow = 1,
-                     widths = c(0.813, 0.17)),
+                     widths = c(0.8, 0.2)),
                   
                   blank,
                   arrangeGrob(
@@ -263,12 +264,12 @@ for (my_country in my_countries){
                   blank,
                   ncol = 1,
                   heights = c(0.35, 6.07, 0.025, 0.5, 0.075)),
-                  nrow = 1, 
+                  nrow = 1,
                   widths = c(1, 50))
       
       
    )
-
-  dev.off()
+   
+   dev.off()
 }
 
