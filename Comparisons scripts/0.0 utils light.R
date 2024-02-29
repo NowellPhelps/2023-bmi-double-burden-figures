@@ -101,7 +101,6 @@ read_data_level <- function(variables, sexes, age_type, region_level, age_level 
   return(data_level)
 }
 
-variables = c("prev_bmi_l185", "prev_bmi_30");sexes = c("female", "male");region_level = "Country";age_level = "adult"
 
 read_data_numbers <- function(variables, sexes, region_level = "Country", age_level = "adult"){
    
@@ -116,7 +115,7 @@ read_data_numbers <- function(variables, sexes, region_level = "Country", age_le
    data_numbers <- NULL
    for (my_sex in sexes){
       for (my_variable in variables){
-         data_numbers.tmp <- read.csv(paste0(indir_est,"Numbers/Model",modelnum,"_",my_sex,"_",my_variable, "_", region_level,"_numbers.csv")) %>%
+         data_numbers.tmp <- read.csv(paste0(indir_est,"Numbers/Model",modelnum,"_",my_sex,"_",my_variable, "_", region_level,"_numbers", ifelse(age_level == "adult", "_20plus", ""), ".csv")) %>%
             mutate(sex = my_sex, variable = my_variable, region_level = region_level)
          
          data_numbers      <- rbind(data_numbers, data_numbers.tmp)

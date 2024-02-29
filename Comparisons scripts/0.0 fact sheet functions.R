@@ -34,6 +34,8 @@ make_bin_plot <- function(plot_data, my_country, my_sex, my_variable, my_year, a
    plot_data$col_ind <- factor(plot_data$col_ind, 
                                levels = c("country", "region", "non"))
    
+   
+   
    p <- ggplot(plot_data, aes(y = mean, fill = col_ind)) +
       geom_histogram(binwidth = bin.width, center = centre) +
       scale_fill_manual(values = c("country" = "#F39200", "region" = "grey30", "non" = "#666666"),
@@ -57,7 +59,7 @@ make_bin_plot <- function(plot_data, my_country, my_sex, my_variable, my_year, a
       # Assume option = Region not coded other possibility
       p <- p + 
          guides(fill=guide_legend(title="Legend")) +
-         theme(legend.background = element_rect(linetype = 2, size = 0.5, colour = "black"),
+         theme(legend.background = element_rect(linetype = 2, linewidth = 0.5, colour = "black"),
                legend.position = "right",
                legend.text=element_text(size= 8),
                legend.title=element_text(size= 9),
@@ -71,7 +73,7 @@ make_bin_plot <- function(plot_data, my_country, my_sex, my_variable, my_year, a
    return(p)
 }
 
-make_mini_trends <- function(plot_data, my_country, my_sex,  age_type, returnLeg = F){
+make_mini_trends <- function(plot_data, my_country, my_sex,  age_type, returnLeg = F, year_overtaking = T){
    #  Option takes "country" or "region"
    # "country" highlights country only
    # "region" highlights country and other countries in region
@@ -88,7 +90,7 @@ make_mini_trends <- function(plot_data, my_country, my_sex,  age_type, returnLeg
       colscale <- col_scale_double_burden_ado
       fillscale <- fill_scale_double_burden_ado
       
-   }else{
+   } else {
       ylims <- c(0,90)
       breaks <- c(0,20,40,60,80)
       plot_data <- plot_data %>% filter(Country == my_country & sex == my_sex  & year %in% seq(plot.start.year,plot.end.year)) %>% 
@@ -98,6 +100,8 @@ make_mini_trends <- function(plot_data, my_country, my_sex,  age_type, returnLeg
       colscale <- col_scale_double_burden
       fillscale <- fill_scale_double_burden
    }
+   
+   ### New code for year overtaking
    
    plot.title <- ifelse(age_type == "ado",
                         ifelse(my_sex == "female", "Girls", "Boys"),
@@ -138,6 +142,12 @@ make_mini_trends <- function(plot_data, my_country, my_sex,  age_type, returnLeg
    return(p)
 }
 
+# plot_data <- data_level
+# rank_data = data_ranking
+# my_year = plot.end.year
+# returnLeg = F
+# rank_plot = T
+
 make_region_rank_one_year <- function(plot_data, rank_data = NULL, my_country, my_sex, my_variable, my_year = plot.end.year, age_type, returnLeg = F, rank_plot = F){
    
    plot_region <- plot_data$Region[which(plot_data$Country == my_country)][[1]]
@@ -156,7 +166,7 @@ make_region_rank_one_year <- function(plot_data, rank_data = NULL, my_country, m
    if(n_names >= 12){
       text_size = 2
    } else {
-      text_size = 2.5
+      text_size = 2.25
    } 
    
    plot_data_ranking <- data_ranking %>% 
@@ -164,18 +174,23 @@ make_region_rank_one_year <- function(plot_data, rank_data = NULL, my_country, m
       filter(Region == plot_region) %>%
       dplyr::rename(mean_ranking = mean, l_ranking = l, u_ranking = u, median_ranking = median)
    
-   plot_data <- merge(plot_data, plot_data_ranking) %>% 
-      mutate(country_label = paste0(ifelse(ranking < 10, " ", ""), ranking, ". ", Country, " (", round(mean), "%)"))
-   
+   plot_data <- merge(plot_data, plot_data_ranking)  %>%
+      rowwise() %>%
+ #     mutate(country_label = paste0(ifelse(ranking_global < 10, "  ", ifelse(ranking_global < 100, " ", "")), ranking_global, ". ", Country, " (", round(mean), "%)"))
+      mutate(country_label = paste0(Country, " (", round(mean), "%; ", ordinal_suffix(ranking_global),")"))
+      
    col_scale <-  scale_colour_manual(values = c("country" = "#F39200", "region" =  "grey30", "non" = "#666666"),
                                      labels = c("country" = "halp", "region" = plot_region, "non" = "Other countries"))
    
+   text_data <- data.frame(y = nrow(plot_data) + 1, x = 0.9, label = "Country (prevalence; global ranking)", col_ind = 0)
+   
    p <- ggplot(plot_data, aes(x,y, colour = col_ind)) +
       geom_text(data = plot_data %>% filter(!(Country == my_country)), aes(label = country_label), hjust = 0, size = text_size) +
-      geom_text(data = plot_data %>% filter(Country == my_country), aes(label = country_label), hjust = 0, size = text_size,fontface="bold") +
+      geom_text(data = plot_data %>% filter(Country == my_country), aes(label = country_label), hjust = 0, size = text_size, fontface="bold") +
       ylab("") +
       xlab("") +
       col_scale +
+      coord_cartesian(clip = 'off') +
       theme_classic() +
       theme(panel.grid = element_blank(),
             axis.line = element_blank(),
@@ -185,6 +200,17 @@ make_region_rank_one_year <- function(plot_data, rank_data = NULL, my_country, m
             plot.title = element_text(size = 8, face = "bold")) +
       theme(legend.position = "none",
             title = element_blank())
+   
+   region_lab <- paste0("\n", plot_region, strrep(" ", 27 - floor(nchar(plot_region)/2)),"\n")
+   
+   if(plot_region == "High-income English-speaking countries"){
+      region_lab<- paste0("High-income",strrep(" ", 27 - floor(nchar("High-income")/2)),
+                          "\nEnglish-speaking countries", strrep(" ", 27 - floor(nchar("English-speaking countries")/2)),"\n")
+   }
+   
+   if(plot_region == "Other sub-Saharan Africa"){
+      region_lab <- ""
+   }
    
    if(rank_plot){
       p <- p +
@@ -199,12 +225,13 @@ make_region_rank_one_year <- function(plot_data, rank_data = NULL, my_country, m
                       inherit.aes = F,
                       aes(y = y, yend = y, x = l_ranking/(200/.8), xend = u_ranking/(200/.8), colour = col_ind),
                       linewidth = 0.3) +
-         theme(axis.text.x = element_text(size = 6),
-               axis.title.x = element_text(size = 7, hjust = 0)) +
-         xlab(paste0("Global ranking                               ", plot_region)) +
-         scale_x_continuous(limits = c(-0.2,2.1), breaks = c(0.005*.8, 0.5*.8, 1*.8), labels = c("1\n(highest)","100\n", "200\n(lowest)"), position = "top") +
-         scale_y_continuous(limits = c(0.5, nrow(plot_data) + 0.5), expand = expansion(mult = c(0, 0))) +
-         theme(axis.text = element_text(hjust = 1))
+         theme(axis.text.x = element_text(size = text_size*2.85, hjust = 1),
+               axis.title.x = element_blank()) +
+#               axis.title.x = element_text(size = 7, hjust = 0)) +
+#         xlab(paste0("Global ranking                               ", plot_region)) +
+         scale_x_continuous(limits = c(-0.2,2.1), breaks = c(0.005*.8, 0.5*.8, 1*.8, 2.1), labels = c("(highest\nprevalence)\n1","\n100", "(lowest\nprevalence)\n200", region_lab), position = "top") +
+         scale_y_continuous(limits = c(0.5, nrow(plot_data) + 1), expand = expansion(mult = c(0, 0))) +
+         geom_text(data = text_data, inherit.aes = F, aes(x=x, y = y, label = label), hjust = 0, size = text_size, fontface = "bold")
       
    } else{
       p <- p + theme(axis.text.x = element_blank(),
@@ -306,7 +333,7 @@ get_text_sources <- function(my_country, data_sources_adult, data_sources_ado){
    text <- paste0(my_country, " had ", n_sources_all_women, " ",ifelse(n_sources_all_women == 1, "study", "studies")," for women, ", n_sources_all_men, " for men, ", n_sources_all_girls, " for girls, and ", n_sources_all_boys, " for boys.")
    
    if (min(c(n_sources_all_women,n_sources_all_men,n_sources_all_girls,n_sources_all_boys)) < 1){
-      text2 <- paste0("Results are inferred from overall \n  global data based on proximity to ", my_country, " for age-sex groups with no studies.")
+      text2 <- paste0("For age-sex groups with no data, results are inferred from overall global data based on proximity.")
       text  <- paste(text, text2)
    }
    
@@ -359,13 +386,14 @@ get_text_prevalences <- function(data_level, data_change, data_numbers, my_count
    change_val <- format(round(abs(data_change_country$mean),1), nsmall = 1)
    
    if(data_change_country$PP.increase < 0.2){
-      change_text <- paste0('<span style="color:darkgreen">a decrease</span> of ', change_val, ' percentage points')
-      
+      #change_text <- paste0('<span style="color:darkgreen">a decrease</span> of ', change_val, ' percentage points')
+      change_text <- paste0('a decrease of ', change_val, ' percentage points')
    } else if(data_change_country$PP.increase <= 0.8){
       change_text <- "with no detectable change"
       
    } else {
-      change_text <- paste0('<span style="color:red">an increase</span> of ', change_val,  ' percentage points')
+      #change_text <- paste0('<span style="color:red">an increase</span> of ', change_val,  ' percentage points')
+      change_text <- paste0('an increase of ', change_val, ' percentage points')
    }
    
    text1 <- paste0(
@@ -386,25 +414,27 @@ get_text_prevalences <- function(data_level, data_change, data_numbers, my_count
      
      if(number_country > 10^6){
         number_country <- paste0(signif(number_country/10^6, 2), " million")
-      } else {
+      } else if (number_country >= 100) {
         number_country <- format(signif(number_country, 2), big.mark = ",", trim = TRUE, scientific = F)
+      } else{
+         number_country <- "Less than 100"
      }
      
      text3 <- paste0("• ", number_country, " ", group_name, " with ", var.name, ".")
   } else{
      text3 <- " "
   }
-   
+  
   if(numbers_exist){
      texttext <- arrangeGrob(textGrob(text3, hjust=0, x = unit(0.02, "npc"),gp = gpar(col = "black", fontsize = 8)),
-                             gridtext::richtext_grob(text1, hjust=0, x = unit(0.02, "npc"), halign = 0,gp = gpar(col = "black", fontsize = 8)),
+                             textGrob(text1, hjust=0, x = unit(0.02, "npc"),gp = gpar(col = "black", fontsize = 8)),
                              textGrob(text2, hjust=0, x = unit(0.02, "npc"), gp = gpar(col = "black", fontsize = 8)),
                              
                              ncol = 1)
   } else{
-     texttext <- arrangeGrob(gridtext::richtext_grob(text1, hjust=0, x = unit(0.02, "npc"), halign = 0,gp = gpar(col = "black", fontsize = 8)),
+     texttext <- arrangeGrob(textGrob(text1, hjust=0, x = unit(0.02, "npc"), gp = gpar(col = "black", fontsize = 8)),
                              textGrob(text2, hjust=0, x = unit(0.02, "npc"), gp = gpar(col = "black", fontsize = 8)), 
-                             gridtext::richtext_grob(text3, hjust=0, x = unit(0.02, "npc"), halign = 0,gp = gpar(col = "black", fontsize = 8)),
+                             textGrob(text3, hjust=0, x = unit(0.02, "npc"), gp = gpar(col = "black", fontsize = 8)),
                              ncol = 1)
   }
    
